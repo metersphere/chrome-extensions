@@ -5,7 +5,7 @@
   "version": "1.0.0",
   "browser_action": {
     "default_icon": "record/icon/favicon.png",
-    "default_popup": "record/html/popup.html",
+    "default_popup": "record/html/main.html",
     "default_title": "MeterSphere"
   },
   "background": {

@@ -1,4 +1,4 @@
-var https_list = [];
+var recordData = [];
 var body = {};
 var START_END_MOD = false;
 var RequestFilter = {urls: ['http://*/*', 'https://*/*']};
@@ -8,10 +8,10 @@ var exist_request = {};
 
 
 function start() {
-    https_list = [];
+    recordData = [];
     START_END_MOD = true;
     chrome.storage.local.set({
-        "https_list": https_list
+        "recordData": recordData
     });
 }
 
@@ -214,9 +214,9 @@ chrome.webRequest.onSendHeaders.addListener(info => {
                     }
                 }
 
-                https_list.push(data);
+                recordData.push(data);
                 chrome.storage.local.set({
-                    "https_list": https_list
+                    "recordData": recordData
                 });
             }
         });
