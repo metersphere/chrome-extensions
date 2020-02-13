@@ -5,6 +5,9 @@
  */
 
 
+/**
+ *具体生成 XML 工具对象
+ */
 let Xml4js = function (options = {}) {
     this.depth = 0;
     this.encoding = options.encoding || 'UTF-8';
@@ -42,11 +45,12 @@ Xml4js.prototype = {
                 fn = arguments[2];
             }
         } else {
-            if (!value)
+            if (value !== undefined) {
                 value = arguments[2];
+            }
         }
 
-        hasValue = value ? true : false;
+        hasValue = value !== undefined;
         hasChilds = callback ? true : false;
         empty = !hasValue && !hasChilds;
 
@@ -75,7 +79,7 @@ Xml4js.prototype = {
                 }
             }
 
-            if (value)
+            if (value !== undefined)
                 this.xml += '>' + value + '</' + elem + '>\n';
 
             if (callback) {
@@ -93,6 +97,11 @@ Xml4js.prototype = {
 };
 
 
+/**
+ *
+ *JMX 构造对象
+ */
+
 var Jmx = function () {
     let resultData;
     chrome.storage.local.get(['recordData'], function (items) {
@@ -109,41 +118,93 @@ Jmx.prototype = {
     preprocessing: function () {
         let jmeterTestPlan = new JmeterTestPlan();
         let hashTree = new HashTree();
-        jmeterTestPlan.addSubElement(hashTree);
-        hashTree.addSubElement(new TestPlan());
+        jmeterTestPlan.addValue(hashTree);
+        let threadGroup = new ThreadGroup();
+        hashTree.addValue(threadGroup);
+
+        threadGroup.threadNums(1);
+        threadGroup.rampTime(1);
+        threadGroup.delay(0);
+        threadGroup.duration(0);
+        threadGroup.onSampleError("continue");
+        threadGroup.scheduler(false);
+
         return jmeterTestPlan;
     }
 };
 
 
 function generateXml(xml, hashTree) {
-    xml.write(hashTree.element, hashTree.attributes, function () {
-        if (hashTree.funcs.length > 0) {
-            hashTree.funcs.forEach(function (v) {
-                generateXml(xml, v);
-            })
-        }
-    });
+    if (hashTree.values.length > 0 && !(hashTree.values[0] instanceof HashTree)) {
+        xml.write(hashTree.element, hashTree.attributes, hashTree.values[0]);
+    } else {
+        xml.write(hashTree.element, hashTree.attributes, function () {
+            if (hashTree.values.length > 0) {
+                hashTree.values.forEach(function (v) {
+                    generateXml(xml, v);
+                })
+            }
+        });
+    }
 }
 
 
-let HashTree = function (element, attributes) {
-    /**
-     * 元素名称
-     */
+/**
+ * HashTree 初始对象
+ */
+let HashTree = function (element, attributes, value) {
     this.element = element || "hashTree";
-    /**
-     * 元素属性 key-value
-     */
     this.attributes = attributes || {};
-
-    this.funcs = [];
+    this.values = [];
+    if (value !== undefined) {
+        this.values.push(value);
+    }
 };
 
-HashTree.prototype.addSubElement = function (hashTree) {
-    this.funcs.push(hashTree)
+HashTree.prototype.addValue = function (hashTree) {
+    this.values.push(hashTree)
 };
 
+HashTree.prototype.commonValue = function (element, name, value) {
+    this.values.push(new HashTree(element, {name: name}, value))
+};
+
+HashTree.prototype.intProp = function (name, value) {
+    this.commonValue("intProp", name, value);
+};
+
+HashTree.prototype.longProp = function (name, value) {
+    this.commonValue("longProp", name, value);
+};
+
+HashTree.prototype.stringProp = function (name, value) {
+    this.commonValue("stringProp", name, value);
+};
+
+HashTree.prototype.boolProp = function (name, value) {
+    this.commonValue("boolProp", name, value);
+};
+
+
+/**
+ * HashTree 的帮助对象
+ */
+
+let CHashTree = function (element, guiclass, testclass, testname, enabled) {
+    HashTree.call(this, element, {
+        guiclass: guiclass,
+        testclass: testclass,
+        testname: testname || "TEST",
+        enabled: enabled || "true"
+    });
+};
+CHashTree.prototype = new HashTree();
+
+
+/**
+ * JmeterTestPlan
+ *
+ */
 let JmeterTestPlan = function (options = {}) {
     HashTree.call(this, "jmeterTestPlan",
         {
@@ -155,29 +216,67 @@ let JmeterTestPlan = function (options = {}) {
 JmeterTestPlan.prototype = new HashTree();
 
 
-let TestPlan = function (options = {}) {
-    HashTree.call(this, "TestPlan", {
-        guiclass: options.guiclass || "TestPlanGui",
-        testclass: options.testclass || "TestPlan",
-        testname: options.testname || "Plan",
-        enabled: options.enabled || "true"
-    });
+/**
+ * TestPlan
+ *
+ */
+let TestPlan = function () {
+    CHashTree.call(this, "TestPlan", "TestPlanGui", "TestPlan");
 };
-TestPlan.prototype = new HashTree();
+TestPlan.prototype = new CHashTree();
 
-let HeaderManager = function (options = {}) {
-    HashTree.call(this, "HeaderManager", {
-        guiclass: options.guiclass || "HeaderPanel",
-        testclass: options.testclass || "HeaderManager",
-        testname: options.testname || "HTTP Header manager",
-        enabled: options.enabled || "true"
-    });
+
+/**
+ * HeaderManager
+ *
+ */
+let HeaderManager = function () {
+    CHashTree.call(this, "HeaderManager", "HeaderPanel", "HeaderManager", "HTTP Header manager");
 };
-HeaderManager.prototype = new HashTree();
-HeaderManager.prototype.addProterties = function () {
+HeaderManager.prototype = new CHashTree();
 
+
+/**
+ * ThreadGroup
+ *
+ */
+let ThreadGroup = function () {
+    CHashTree.call(this, "ThreadGroup", "ThreadGroupGui", "ThreadGroup", "Group1");
+};
+ThreadGroup.prototype = new CHashTree();
+
+ThreadGroup.prototype.threadNums = function (value) {
+    this.intProp("ThreadGroup.num_threads", value);
 };
 
+ThreadGroup.prototype.rampTime = function (value) {
+    this.intProp("ThreadGroup.ramp_time", value);
+};
+
+ThreadGroup.prototype.delay = function (value) {
+    this.longProp("ThreadGroup.delay", value);
+};
+
+ThreadGroup.prototype.duration = function (value) {
+    this.longProp("ThreadGroup.duration", value);
+};
+
+ThreadGroup.prototype.onSampleError = function (value) {
+    this.stringProp("ThreadGroup.on_sample_error", value);
+};
+ThreadGroup.prototype.scheduler = function (value) {
+    this.boolProp("ThreadGroup.scheduler", value);
+};
+
+let LoopController = function () {
+    CHashTree.call(this, "elementProp", "LoopControlPanel", "LoopController", "Loop Controller");
+};
+ThreadGroup.prototype = new CHashTree();
+
+/**
+ * HTTPSamplerProxy
+ *
+ */
 let HTTPSamplerProxy = function () {
     HashTree.call(this, "HTTPSamplerProxy", {
         guiclass: options.guiclass || "TestPlanGui",
