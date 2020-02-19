@@ -45,12 +45,12 @@ Xml4js.prototype = {
                 fn = arguments[2];
             }
         } else {
-            if (value !== undefined) {
+            if (value === null) {
                 value = arguments[2];
             }
         }
 
-        hasValue = value !== undefined;
+        hasValue = value !== null;
         hasChilds = callback ? true : false;
         empty = !hasValue && !hasChilds;
 
@@ -79,7 +79,7 @@ Xml4js.prototype = {
                 }
             }
 
-            if (value !== undefined)
+            if (value !== null)
                 this.xml += '>' + value + '</' + elem + '>\n';
 
             if (callback) {
@@ -102,11 +102,8 @@ Xml4js.prototype = {
  *JMX 构造对象
  */
 
-var Jmx = function () {
-    let resultData;
-    chrome.storage.local.get(['recordData'], function (items) {
-        resultData = items.recordData;
-    });
+var Jmx = function (data) {
+    this.data = data;
     this.xml = new Xml4js();
 };
 
@@ -119,15 +116,44 @@ Jmx.prototype = {
         let jmeterTestPlan = new JmeterTestPlan();
         let hashTree = new HashTree();
         jmeterTestPlan.addValue(hashTree);
+
+        let testPlan = new TestPlan();
+        testPlan.boolProp("TestPlan.functional_mode", false);
+        testPlan.boolProp("TestPlan.serialize_threadgroups", false);
+        testPlan.boolProp("TestPlan.tearDown_on_shutdown", true);
+        testPlan.stringProp("TestPlan.comments", "");
+        testPlan.stringProp("TestPlan.user_define_classpath", "");
+        hashTree.addValue(testPlan);
+
         let threadGroup = new ThreadGroup();
         hashTree.addValue(threadGroup);
+        threadGroup.intProp("ThreadGroup.num_threads", 1);
+        threadGroup.intProp("ThreadGroup.ramp_time", 1);
+        threadGroup.longProp("ThreadGroup.delay", 0);
+        threadGroup.longProp("ThreadGroup.duration", 0);
+        threadGroup.stringProp("ThreadGroup.on_sample_error", "continue");
+        threadGroup.boolProp("ThreadGroup.scheduler", false);
 
-        threadGroup.threadNums(1);
-        threadGroup.rampTime(1);
-        threadGroup.delay(0);
-        threadGroup.duration(0);
-        threadGroup.onSampleError("continue");
-        threadGroup.scheduler(false);
+        let lc = new LoopController();
+        threadGroup.addValue(lc);
+        lc.boolProp("LoopController.continue_forever", false);
+        lc.stringProp("LoopController.loops", 1);
+
+        let ht = new HashTree();
+        hashTree.addValue(ht);
+
+        if (this.data !== null) {
+            this.data.forEach(function (item) {
+                let hsp = new HTTPSamplerProxy(item.label);
+                let url = new URL(item.url);
+                hsp.stringProp("HTTPSampler.protocol", url.protocol);
+                hsp.stringProp("HTTPSampler.path", url.pathname + url.search);
+                hsp.stringProp("HTTPSampler.method", item.method);
+                hsp.stringProp("HTTPSampler.domain", url.hostname);
+                hsp.intProp("HTTPSampler.port", url.port);
+                ht.addValue(hsp);
+            });
+        }
 
         return jmeterTestPlan;
     }
@@ -245,46 +271,32 @@ let ThreadGroup = function () {
 };
 ThreadGroup.prototype = new CHashTree();
 
-ThreadGroup.prototype.threadNums = function (value) {
-    this.intProp("ThreadGroup.num_threads", value);
-};
-
-ThreadGroup.prototype.rampTime = function (value) {
-    this.intProp("ThreadGroup.ramp_time", value);
-};
-
-ThreadGroup.prototype.delay = function (value) {
-    this.longProp("ThreadGroup.delay", value);
-};
-
-ThreadGroup.prototype.duration = function (value) {
-    this.longProp("ThreadGroup.duration", value);
-};
-
-ThreadGroup.prototype.onSampleError = function (value) {
-    this.stringProp("ThreadGroup.on_sample_error", value);
-};
-ThreadGroup.prototype.scheduler = function (value) {
-    this.boolProp("ThreadGroup.scheduler", value);
-};
 
 let LoopController = function () {
-    CHashTree.call(this, "elementProp", "LoopControlPanel", "LoopController", "Loop Controller");
+    HashTree.call(this, "elementProp", {
+        name: "ThreadGroup.main_controller",
+        elementType: "LoopController",
+        guiclass: "LoopControlPanel",
+        testclass: "LoopController",
+        testname: "Loop Controller",
+        enabled: "true"
+    });
 };
-ThreadGroup.prototype = new CHashTree();
+LoopController.prototype = new HashTree();
+
 
 /**
  * HTTPSamplerProxy
  *
  */
-let HTTPSamplerProxy = function () {
+let HTTPSamplerProxy = function (name) {
     HashTree.call(this, "HTTPSamplerProxy", {
-        guiclass: options.guiclass || "TestPlanGui",
-        testclass: options.testclass || "TestPlan",
-        testname: options.testname || "Plan",
-        enabled: options.enabled || "true"
+        guiclass: "HttpTestSampleGui",
+        testname: name,
     });
 };
+
+HTTPSamplerProxy.prototype = new HashTree();
 
 
 

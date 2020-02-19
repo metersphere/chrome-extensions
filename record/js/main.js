@@ -10,12 +10,15 @@ $('#end_fit2cloud').click(e => {
     alert('结束录制');
 });
 
+
 $('#export_JMX_fit2cloud').click(e => {
-    let jmx = new Jmx();
-    let blob = new Blob([jmx.generate()], {type: "application/octet-stream"});
-    let link = document.createElement('a');
-    link.href = window.URL.createObjectURL(blob);
-    link.download = "fit2cloud_jmx.jmx";
-    link.click();
-    window.URL.revokeObjectURL(link.href);
+    chrome.storage.local.get(['recordData'], function (items) {
+        let jmx = new Jmx(items.recordData);
+        let blob = new Blob([jmx.generate()], {type: "application/octet-stream"});
+        let link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = "fit2cloud_jmx.jmx";
+        link.click();
+        window.URL.revokeObjectURL(link.href);
+    })
 });
