@@ -11,7 +11,7 @@
   "background": {
     "scripts": [
       "record/js/background.js",
-      "record/js/jquery-1.8.3.js",
+      "record/js/jquery-3.4.1.min.js",
       "record/js/URI.js"
     ]
   },

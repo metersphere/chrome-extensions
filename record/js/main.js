@@ -1,17 +1,21 @@
-$('#start_fit2cloud').click(e => {
+$('#record_start').click(e => {
+    $('#record_download').hide();
+    $('#record_stop').show();
     let bg = chrome.extension.getBackgroundPage();
     bg.start();
-    alert('开始录制');
+    $('#record_start').hide();
 });
 
-$('#end_fit2cloud').click(e => {
+$('#record_stop').click(e => {
+    $('#record_download').show();
     let bg = chrome.extension.getBackgroundPage();
     bg.end();
-    alert('结束录制');
+    $('#record_start').show();
+    $('#record_stop').hide();
 });
 
 
-$('#export_JMX_fit2cloud').click(e => {
+$('#record_download').click(e => {
     chrome.storage.local.get(['recordData'], function (items) {
         let jmx = new Jmx(items.recordData);
         let blob = new Blob([jmx.generate()], {type: "application/octet-stream"});
