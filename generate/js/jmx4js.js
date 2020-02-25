@@ -123,6 +123,7 @@ Jmx.prototype = {
         testPlan.boolProp("TestPlan.tearDown_on_shutdown", true);
         testPlan.stringProp("TestPlan.comments", "");
         testPlan.stringProp("TestPlan.user_define_classpath", "");
+        testPlan.addArguments();
         hashTree.addValue(testPlan);
 
         let threadGroup = new ThreadGroup();
@@ -151,6 +152,17 @@ Jmx.prototype = {
                 hsp.stringProp("HTTPSampler.method", item.method);
                 hsp.stringProp("HTTPSampler.domain", url.hostname);
                 hsp.intProp("HTTPSampler.port", url.port);
+
+                let ephm = new ElementPropHeaderManager();
+                hsp.addValue(ephm);
+
+                let cphmh = new CollectionPropHeaderManagerHeaders();
+                ephm.addValue(cphmh);
+
+                item.headers.forEach(function (h) {
+                    cphmh.addValue(new elementPropHeaderManager(h.name, h.value));
+                });
+
                 ht.addValue(hsp);
             });
         }
@@ -251,6 +263,15 @@ let TestPlan = function () {
 };
 TestPlan.prototype = new CHashTree();
 
+TestPlan.prototype.addArguments = function () {
+    let ht = new HashTree("elementProp", {
+        name: "TestPlan.user_defined_variables",
+        elementType: "Arguments"
+    });
+    ht.addValue(new HashTree("collectionProp", {name: "Arguments.arguments"}));
+    this.values.push(ht);
+};
+
 
 /**
  * HeaderManager
@@ -298,6 +319,32 @@ let HTTPSamplerProxy = function (name) {
 
 HTTPSamplerProxy.prototype = new HashTree();
 
+
+let ElementPropHeaderManager = function () {
+    HashTree.call(this, "elementProp", {
+        name: "HTTPSampler.header_manager",
+        elementType: "HeaderManager"
+    });
+};
+ElementPropHeaderManager.prototype = new HashTree();
+
+let CollectionPropHeaderManagerHeaders = function () {
+    HashTree.call(this, "collectionProp", {
+        name: "HeaderManager.headers"
+    });
+};
+CollectionPropHeaderManagerHeaders.prototype = new HashTree();
+
+
+let elementPropHeaderManager = function (name, value) {
+    let ht = new HashTree("elementProp", {
+        name: name,
+        elementType: "Header"
+    });
+    ht.stringProp("Header.name", name);
+    ht.stringProp("Header.value", value);
+    return ht;
+};
 
 
 
