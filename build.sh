@@ -3,7 +3,7 @@
 # Purpose: Pack a Chromium extension directory into crx format
 
 if test $# -ne 2; then
-  echo "Usage: crxmake.sh <extension dir> <pem path>"
+  echo "Usage: build.sh <extension dir> <pem path>"
   exit 1
 fi
 
@@ -16,9 +16,11 @@ sig="$name.sig"
 zip="$name.zip"
 trap 'rm -f "$pub" "$sig" "$zip"' EXIT
 
+openssl genrsa -out rsaprivkey.pem 1024 > "$key"
+
 # zip up the crx dir
 cwd=$(pwd -P)
-(cd "$dir" && zip -qr -9 -X "$cwd/$zip" .)
+(cd "$dir" && zip -qr -9 -X "$cwd/$zip" .  -x ./.git/* -x ./.idea/* )
 
 # signature
 openssl sha1 -sha1 -binary -sign "$key" < "$zip" > "$sig"
