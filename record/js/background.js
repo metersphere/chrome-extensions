@@ -1,33 +1,88 @@
 var recordData = [];
-var body = {};
-var START_END_MOD = false;
-var RequestFilter = {urls: ['http://*/*', 'https://*/*']};
 var useragent = null;
 var activeTabId = 0;
-var exist_request = {};
+var body = {};
+var json = null;
+
+var options = {};
+var cache = false;
+var cookie = false;
 
 
-function start() {
+function stopRecording() {
+    chrome.webRequest.onBeforeRequest.removeListener(onBeforeRequest);
+    chrome.webRequest.onSendHeaders.removeListener(onSendHeaders);
+    chrome.webRequest.onBeforeSendHeaders.removeListener(onBeforeSendHeaders);
+
+    chrome.storage.local.set({isRecording: false});
+}
+
+function startRecording() {
+    body = {};
     recordData = [];
-    START_END_MOD = true;
-    chrome.storage.local.set({
-        "recordData": recordData
+    chrome.storage.local.set({"recordData": recordData},function () {
+
+        chrome.storage.local.get('options', function (items) {
+            options = items.options;
+            const RecordAjax = options.record_ajax;
+            const RecordCss = options.record_css;
+            const RecordJs = options.record_js;
+            const RecordImages = options.record_images;
+            const RecordOther = options.record_other;
+            cache = options.cache;
+            cookie = options.cookie;
+
+            if (items.options.useragent) {
+                useragent = items.options.useragent;
+            }
+            var RequestFilter = {};
+            var MatchPatterns;
+            if (!options.regex_include) {
+                MatchPatterns = ['http://*/*', 'https://*/*'];
+            } else {
+                MatchPatterns = options.regex_include.split(',').map(function (item) {
+                    return item.trim();
+                });
+            }
+
+            RequestFilter.urls = MatchPatterns;
+            RequestFilter.types = ['main_frame', 'sub_frame', 'object'];
+            if (RecordAjax != false) {
+                RequestFilter.types.push('xmlhttprequest');
+            }
+            if (RecordCss != false) {
+                RequestFilter.types.push('stylesheet');
+                RequestFilter.types.push('font');
+            }
+            if (RecordJs != false) {
+                RequestFilter.types.push('script');
+            }
+            if (RecordImages != false) {
+                RequestFilter.types.push('image');
+            }
+            if (RecordOther != false) {
+                RequestFilter.types.push('other');
+                RequestFilter.types.push('ping');
+            }
+
+            // listeners
+            chrome.webRequest.onBeforeSendHeaders.addListener(onBeforeSendHeaders, RequestFilter, [
+                'blocking', 'requestHeaders']);
+            chrome.webRequest.onBeforeRequest.addListener(onBeforeRequest, RequestFilter,
+                ['requestBody']);
+            // We use onSendHeaders to collect send headers
+            chrome.webRequest.onSendHeaders.addListener(onSendHeaders, RequestFilter,
+                ['requestHeaders']);
+            delete (RequestFilter.types);
+        });
+
+        chrome.storage.local.set({isRecording: true});
     });
 }
 
-
-function end() {
-    START_END_MOD = false;
-
-}
-
-chrome.webRequest.onBeforeSendHeaders.addListener(info => {
-    if (!START_END_MOD) {
-        return
-    }
+function onBeforeSendHeaders(info) {
     if (info.requestHeaders) {
         if (useragent && useragent != 'Current Browser') {
-            // Replace the User-Agent header
             var headers = info.requestHeaders;
             headers.forEach(function (header) {
                 if (header.name.toLowerCase() == 'user-agent') {
@@ -43,12 +98,10 @@ chrome.webRequest.onBeforeSendHeaders.addListener(info => {
             requestHeaders: []
         };
     }
-}, RequestFilter, ['blocking', 'requestHeaders']);
+}
 
-chrome.webRequest.onBeforeRequest.addListener(info => {
-    if (!START_END_MOD) {
-        return
-    }
+
+function onBeforeRequest(info) {
     if (info.requestBody) {
         var postData = '';
         if (!info.requestBody.error) {
@@ -126,13 +179,10 @@ chrome.webRequest.onBeforeRequest.addListener(info => {
         var key = info.method + info.requestId;
         body[key] = postData;
     }
-}, RequestFilter, ['requestBody']);
+}
 
 
-chrome.webRequest.onSendHeaders.addListener(info => {
-    if (!START_END_MOD) {
-        return
-    }
+function onSendHeaders(info) {
     chrome.storage.local.get(null, function (items) {
         chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
             if (tabs.length > 0) {
@@ -221,7 +271,7 @@ chrome.webRequest.onSendHeaders.addListener(info => {
             }
         });
     });
-}, RequestFilter, ['requestHeaders']);
+}
 
 
 function isFromRoot(rootDomain, testURL) {
