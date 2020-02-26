@@ -60,7 +60,7 @@ $('#record_start').click(e => {
 $('#record_stop').click(e => {
     $('#record_download').show();
     let bg = chrome.extension.getBackgroundPage();
-    bg.end();
+    bg.stopRecording();
     $('#record_start').show();
     $('#record_stop').hide();
 });
@@ -68,7 +68,7 @@ $('#record_stop').click(e => {
 
 $('#record_download').click(e => {
     chrome.storage.local.get(null, function (item) {
-        let jmx = new Jmx(item.recordData);
+        let jmx = new Jmx(item.recordData, item.jmxName);
         let blob = new Blob([jmx.generate()], {type: "application/octet-stream"});
         let link = document.createElement('a');
         link.href = window.URL.createObjectURL(blob);
@@ -83,12 +83,19 @@ function generateJmxName() {
     let d = new Date(),
         month = '' + (d.getMonth() + 1),
         day = '' + d.getDate(),
-        year = d.getFullYear();
+        year = d.getFullYear(),
+        hour = d.getHours(),
+        min = d.getMinutes();
+
 
     if (month.length < 2)
         month = '0' + month;
     if (day.length < 2)
         day = '0' + day;
+    if (hour.length < 2)
+        hour = '0' + hour;
+    if (min.length < 2)
+        min = '0' + min;
 
-    return ["RECORD", year, month, day].join('-');
+    return ["RECORD", year, month, day, hour, min].join('-');
 }
