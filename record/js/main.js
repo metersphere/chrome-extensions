@@ -28,6 +28,8 @@ $(document).ready(function () {
             chrome.storage.local.set({"recordData": item.recordData});
         }
 
+        $('#main_download').hide();
+
         if (item.isRecording) {
             $('#record_download').hide();
             $('#record_stop').show();
@@ -68,7 +70,39 @@ $('#record_stop').click(e => {
 
 $('#record_download').click(e => {
     chrome.storage.local.get(null, function (item) {
-        let jmx = new Jmx(item.recordData, item.jmxName);
+        let domains = {};
+        let domainList = [];
+        item.recordData.forEach(function (item) {
+            let url = new URL(item.url);
+            if (!domains[url.hostname]) {
+                domains[url.hostname] = url.hostname;
+                domainList.push(url.hostname);
+            }
+        });
+
+        $('#main_page').hide();
+        $('#main_download').show();
+
+        domainList.forEach(function (domain) {
+            $('#checkboxs').prepend(
+                "<div class=\"custom-control custom-checkbox\">\n" +
+                "            <input type=\"checkbox\" class=\"custom-control-input\" id=\"" + domain + "\">\n" +
+                "            <label class=\"custom-control-label\" for=\"" + domain + "\">" + domain + "</label>\n" +
+                "        </div>"
+            )
+        })
+    });
+});
+
+$('#record_save').click(e => {
+    let domains = [];
+    $('input:checkbox').each(function () {
+        if ($(this).attr('checked') == true) {
+            domains.push($(this).val());
+        }
+    });
+    chrome.storage.local.get(null, function (item) {
+        let jmx = new Jmx(item.recordData, item.jmxName, domains);
         let blob = new Blob([jmx.generate()], {type: "application/octet-stream"});
         let link = document.createElement('a');
         link.href = window.URL.createObjectURL(blob);
