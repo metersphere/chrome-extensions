@@ -125,7 +125,7 @@ Jmx.prototype = {
         let hsps = [];
         let index = 1;
         this.data.forEach(function (item) {
-            let hsp = new HTTPSamplerProxy(item.label);
+            let hsp = new HTTPSamplerProxy(item.label.replace(/&/gi, "&amp;"));
             let url = new URL(item.url);
 
             if (!domains[url.hostname]) {
@@ -136,11 +136,15 @@ Jmx.prototype = {
 
 
             hsp.stringProp("HTTPSampler.domain", "${" + domainAlias[url.hostname] + "}");
-            hsp.stringProp("HTTPSampler.protocol", url.protocol);
-            hsp.stringProp("HTTPSampler.path", url.pathname + url.search);
+            hsp.stringProp("HTTPSampler.protocol", url.protocol.split(":")[0]);
+            hsp.stringProp("HTTPSampler.path", url.pathname);
             hsp.stringProp("HTTPSampler.method", item.method);
+            if (url.port === "") {
+                hsp.intProp("HTTPSampler.port", 0);
+            } else {
+                hsp.intProp("HTTPSampler.port", url.port);
+            }
 
-            hsp.intProp("HTTPSampler.port", url.port);
 
             let ephm = new ElementPropHeaderManager();
             hsp.addValue(ephm);
@@ -159,6 +163,7 @@ Jmx.prototype = {
             hsp.addArguments(item.url, item.body);
 
             hsps.push(hsp);
+            hsps.push("<hashTree/>");
         });
 
 
@@ -230,13 +235,12 @@ Jmx.prototype = {
         lc.boolProp("LoopController.continue_forever", false);
         lc.stringProp("LoopController.loops", 1);
 
-        // let ht = new HashTree();
-        // let ht1 = new HashTree();
-        // ht.addValue(ht1);
-        // hashTree1.addValue(ht);
+        let ht = new HashTree();
+
+        hashTree1.addValue(ht);
 
         hsps.forEach(function (hsp) {
-            hashTree1.addValue(hsp);
+            ht.addValue(hsp);
         });
         return jmeterTestPlan;
     }
@@ -336,7 +340,7 @@ JmeterTestPlan.prototype = new HashTree();
  *
  */
 let TestPlan = function (name) {
-    CHashTree.call(this, "TestPlan", "TestPlanGui", name);
+    CHashTree.call(this, "TestPlan", "TestPlanGui", "TestPlan", name);
 };
 TestPlan.prototype = new CHashTree();
 
@@ -392,7 +396,7 @@ Arguments.prototype.addArguments = function (domianAlias) {
 
     if (domianAlias) {
         Object.getOwnPropertyNames(domianAlias).forEach(function (key) {
-            cp.addValue(addArgumentsCommon(domianAlias[key], key, true));
+            cp.addValue(addArgumentsCommon(domianAlias[key], key, true, true));
         });
     }
 
@@ -412,9 +416,9 @@ DNSCacheManager.prototype = new CHashTree();
 
 DNSCacheManager.prototype.init = function () {
     let cp = new HashTree("collectionProp", {name: "DNSCacheManager.servers"});
-    cp.boolProp("DNSCacheManager.clearEachIteration", true);
-    cp.boolProp("DNSCacheManager.isCustomResolver", false);
     this.values.push(cp);
+    this.boolProp("DNSCacheManager.clearEachIteration", true);
+    this.boolProp("DNSCacheManager.isCustomResolver", false);
 };
 
 
@@ -429,8 +433,8 @@ let AuthManager = function () {
 AuthManager.prototype = new CHashTree();
 AuthManager.prototype.init = function () {
     let cp = new HashTree("collectionProp", {name: "AuthManager.auth_list"});
-    cp.boolProp("AuthManager.controlledByThreadGroup", false);
     this.values.push(cp);
+    this.boolProp("AuthManager.controlledByThreadGroup", false);
 };
 
 /**
@@ -444,9 +448,9 @@ let CookieManager = function () {
 CookieManager.prototype = new CHashTree();
 CookieManager.prototype.init = function () {
     let cp = new HashTree("collectionProp", {name: "CookieManager.cookies"});
-    cp.boolProp("CookieManager.clearEachIteration", true);
-    cp.boolProp("CookieManager.controlledByThreadGroup", false);
     this.values.push(cp);
+    this.boolProp("CookieManager.clearEachIteration", true);
+    this.boolProp("CookieManager.controlledByThreadGroup", false);
 };
 
 /**
@@ -513,12 +517,12 @@ HTTPSamplerProxy.prototype.addArguments = function (url, body) {
 
     let params = getUrlParams(url);
     params.forEach(function (item) {
-        ht.addValue(addArgumentsCommon(item.name, item.value, false));
+        cp.addValue(addArgumentsCommon(item.name, item.value, false));
     });
 
     if (body) {
         Object.getOwnPropertyNames(body).forEach(function (key) {
-            ht.addValue(addArgumentsCommon(key, body[key], true));
+            cp.addValue(addArgumentsCommon(key, body[key], true));
         });
     }
 
@@ -527,15 +531,19 @@ HTTPSamplerProxy.prototype.addArguments = function (url, body) {
 };
 
 
-function addArgumentsCommon(name, value, alwaysEncode) {
+function addArgumentsCommon(name, value, alwaysEncode, metadata) {
     let ht = new HashTree("elementProp", {
         name: name,
         elementType: "HTTPArgument"
     });
     ht.boolProp("HTTPArgument.always_encode", alwaysEncode);
-    ht.stringProp("Argument.name", name);
+    if (typeof (name) == 'string') {
+        ht.stringProp("Argument.name", name);
+    }
     ht.stringProp("Argument.value", value);
-    ht.stringProp("Argument.metadata", "=");
+    if (!metadata) {
+        ht.stringProp("Argument.metadata", "=");
+    }
     return ht;
 }
 
