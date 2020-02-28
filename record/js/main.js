@@ -46,6 +46,7 @@ $(document).ready(function () {
     });
 });
 
+
 $("#jmx_name").change(e => {
     chrome.storage.local.set({"jmxName": $(" #jmx_name ").val()});
 });
@@ -86,7 +87,7 @@ $('#record_download').click(e => {
         domainList.forEach(function (domain) {
             $('#checkboxs').prepend(
                 "<div class=\"custom-control custom-checkbox\">\n" +
-                "            <input type=\"checkbox\" class=\"custom-control-input\" id=\"" + domain + "\">\n" +
+                "            <input type=\"checkbox\" class=\"custom-control-input\" name=\"domains\" id=\"" + domain + "\">\n" +
                 "            <label class=\"custom-control-label\" for=\"" + domain + "\">" + domain + "</label>\n" +
                 "        </div>"
             )
@@ -96,10 +97,8 @@ $('#record_download').click(e => {
 
 $('#record_save').click(e => {
     let domains = [];
-    $('input:checkbox').each(function () {
-        if ($(this).attr('checked') == true) {
-            domains.push($(this).val());
-        }
+    $("input[name='domains']:checked").each(function(){
+        domains.push($(this).attr("id"));
     });
     chrome.storage.local.get(null, function (item) {
         let jmx = new Jmx(item.recordData, item.jmxName, domains);
@@ -109,6 +108,8 @@ $('#record_save').click(e => {
         link.download = item.jmxName + ".jmx";
         link.click();
         window.URL.revokeObjectURL(link.href);
+        $('#main_page').show();
+        $('#main_download').hide();
     });
 });
 

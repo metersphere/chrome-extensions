@@ -9,80 +9,96 @@
     <title>MeterSphere</title>
     <style>
         .gi-1x {
-            font-size: 25px;
+            font-size: 24px;
         }
 
         a {
             text-decoration: none;
-            color: #783887;
         }
 
         a:link {
             text-decoration: none;
-            color: #783887;
         }
 
         a:active {
             text-decoration: none;
-            color: #783887;
         }
 
         a:visited {
             text-decoration: none;
-            color: #783887;
         }
 
         a:hover {
             text-decoration: none;
-            color: #783887;
         }
 
-        .top-header {
-            height: 45px;
-            background-color: #783887;
-            text-align: center;
+        .header-top {
+            width: 100%;
+            height: 40px;
+            padding: 0 10px;
+            background-color: rgb(44, 42, 72);
+            color: rgb(245, 245, 245);
+            font-size: 14px;
         }
 
-        .to-title {
-            padding-top: 8px;
-            font-size: 20px;
-            margin: 0;
-            color: white
+        .logo {
+            width: 156px;
+            margin-right: 20px;
+            display: inline-block;
+            background-size: 156px 30px;
+            height: 40px;
+            background-repeat: no-repeat;
+            background-position: 50% center;
+            background-image: url("../icon/metersphere.png");
         }
+
+        .footer {
+            width: 100%;
+            height: 40px;
+            padding: 0 10px;
+            background-color: rgb(44, 42, 72);
+            color: rgb(245, 245, 245);
+            font-size: 12px;
+        }
+
     </style>
 </head>
 <body>
-<div class="top-header">
-    <div class="to-title">
-        MeterSphere
-    </div>
+<div class="header-top">
+    <a class="logo"></a>
 </div>
-<div style="height: 100%;width: 305px;padding: 10px">
-    <div class="container" id="main_page">
+<div style="width: 305px;padding: 10px 10px 0 10px;">
+    <div class="container" id="main_page" style="height: 85px">
         <div class="text-center">
             <div class="row text-center" style="margin-bottom: 10px">
                 <input type="text" id="jmx_name" class="form-control" placeholder="脚本名称" aria-label="脚本名称"
                        aria-describedby="basic-addon1">
             </div>
             <div class="row">
-                <a href="#" id="record_start">
-                    <span class="glyphicon glyphicon-expand gi-1x"></span>
+                <a href="#" id="record_start" style="display: none">
+                    <span class="glyphicon glyphicon-play-circle gi-1x"></span>
                 </a>
-                <a href="#" id="record_stop">
+                <a href="#" id="record_stop" style="display: none">
                     <span class="glyphicon glyphicon-pause gi-1x"></span>
                 </a>
 
-                <a href="#" id="record_download">
-                    <span class="glyphicon glyphicon-download-alt gi-1x"></span>
+                <a href="#" id="record_download" style="display: none;margin-left: 5px">
+                    <span class="glyphicon glyphicon-saved gi-1x"></span>
                 </a>
             </div>
         </div>
     </div>
-    <div id="main_download">
+    <div id="main_download" style="display: none">
         <div id="checkboxs" style="margin-bottom: 10px;margin-top: 10px;"></div>
-        <a href="#" id="record_save" style="width: 100%;color: #783887">
-            Save
-        </a>
+        <div class="btn-group btn-group-sm" role="group" aria-label="...">
+            <button type="button" id="record_save" class="btn btn-default">下载</button>
+        </div>
+    </div>
+</div>
+<div class="footer">
+    <div style="height: 100%;padding-top: 12px;
+    padding-left: 13px;"><span>
+        版权所有©杭州飞致云信息科技有限公司</span>
     </div>
 </div>
 <script type="text/javascript" src="../js/jquery-3.4.1.min.js"></script>

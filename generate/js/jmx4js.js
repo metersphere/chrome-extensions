@@ -107,9 +107,15 @@ Xml4js.prototype = {
  *JMX 构造对象
  */
 
-var Jmx = function (data, name) {
+var Jmx = function (data, name, ds) {
     this.data = data;
     this.name = name;
+    let domains = {};
+    ds.forEach(function (d) {
+        domains[d] = d;
+    });
+    this.domains = domains;
+
     this.xml = new Xml4js();
 };
 
@@ -119,51 +125,50 @@ Jmx.prototype = {
         return this.xml.toString();
     },
     preprocessing: function () {
-        let domains = {};
         let domainAlias = {};
+        let index = 1;
+        Object.getOwnPropertyNames(this.domains).forEach(function (key) {
+            domainAlias[key] = "BASE_URL_" + index;
+            index = index + 1;
+        });
         let UserAgent = null;
         let hsps = [];
-        let index = 1;
+        let domains = this.domains;
+
         this.data.forEach(function (item) {
-            let hsp = new HTTPSamplerProxy(item.label.replace(/&/gi, "&amp;"));
             let url = new URL(item.url);
-
-            if (!domains[url.hostname]) {
-                domains[url.hostname] = url.hostname;
-                domainAlias[url.hostname] = "BASE_URL_" + index;
-                index = index + 1;
-            }
-
-
-            hsp.stringProp("HTTPSampler.domain", "${" + domainAlias[url.hostname] + "}");
-            hsp.stringProp("HTTPSampler.protocol", url.protocol.split(":")[0]);
-            hsp.stringProp("HTTPSampler.path", url.pathname);
-            hsp.stringProp("HTTPSampler.method", item.method);
-            if (url.port === "") {
-                hsp.intProp("HTTPSampler.port", 0);
-            } else {
-                hsp.intProp("HTTPSampler.port", url.port);
-            }
-
-
-            let ephm = new ElementPropHeaderManager();
-            hsp.addValue(ephm);
-
-            let cphmh = new CollectionPropHeaderManagerHeaders();
-            ephm.addValue(cphmh);
-
-            item.headers.forEach(function (h) {
-                if (h.name === 'User-Agent') {
-                    UserAgent = h.value;
+            if (domains[url.hostname]) {
+                let hsp = new HTTPSamplerProxy(item.label.replace(/&/gi, "&amp;"));
+                hsp.stringProp("HTTPSampler.domain", "${" + domainAlias[url.hostname] + "}");
+                hsp.stringProp("HTTPSampler.protocol", url.protocol.split(":")[0]);
+                hsp.stringProp("HTTPSampler.path", url.pathname);
+                hsp.stringProp("HTTPSampler.method", item.method);
+                if (url.port === "") {
+                    hsp.intProp("HTTPSampler.port", 0);
                 } else {
-                    cphmh.addValue(new elementPropHeaderManager(h.name, h.value));
+                    hsp.intProp("HTTPSampler.port", url.port);
                 }
-            });
 
-            hsp.addArguments(item.url, item.body);
 
-            hsps.push(hsp);
-            hsps.push("<hashTree/>");
+                let ephm = new ElementPropHeaderManager();
+                hsp.addValue(ephm);
+
+                let cphmh = new CollectionPropHeaderManagerHeaders();
+                ephm.addValue(cphmh);
+
+                item.headers.forEach(function (h) {
+                    if (h.name === 'User-Agent') {
+                        UserAgent = h.value;
+                    } else {
+                        cphmh.addValue(new elementPropHeaderManager(h.name, h.value));
+                    }
+                });
+
+                hsp.addArguments(item.url, item.body);
+
+                hsps.push(hsp);
+                hsps.push("<hashTree/>");
+            }
         });
 
 
