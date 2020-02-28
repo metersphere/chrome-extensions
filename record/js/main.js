@@ -4,6 +4,11 @@ $(document).ready(function () {
             item.jmxName = generateJmxName();
             chrome.storage.local.set({"jmxName": item.jmxName});
         }
+
+        if (!item.recordData || item.recordData.length < 1) {
+            item.jmxName = generateJmxName();
+            chrome.storage.local.set({"jmxName": item.jmxName});
+        }
         $("#jmx_name").val(item.jmxName);
 
         if (!item.options) {
@@ -61,11 +66,16 @@ $('#record_start').click(e => {
 });
 
 $('#record_stop').click(e => {
-    $('#record_download').show();
     let bg = chrome.extension.getBackgroundPage();
     bg.stopRecording();
     $('#record_start').show();
     $('#record_stop').hide();
+    chrome.storage.local.get(null, function (item) {
+        if (item.recordData.length > 0) {
+            $('#record_download').show();
+        }
+    });
+
 });
 
 
