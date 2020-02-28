@@ -313,6 +313,3 @@ function get_url_extension(url) {
 
     return null;
 }
-
-
-
