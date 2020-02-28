@@ -44,17 +44,18 @@
             background-color: rgb(44, 42, 72);
             color: rgb(245, 245, 245);
             font-size: 14px;
+            vertical-align: middle;
         }
 
         .logo {
-            width: 156px;
-            margin-right: 20px;
+            width: 40px;
             display: inline-block;
-            background-size: 156px 30px;
+            background-size: 40px 30px;
             height: 40px;
             background-repeat: no-repeat;
             background-position: 50% center;
-            background-image: url("../icon/metersphere.png");
+            background-image: url("../icon/favicon-w.png");
+            float: left;
         }
 
         .footer {
@@ -71,8 +72,9 @@
 <body>
 <div class="header-top">
     <a class="logo"></a>
+    <span style="height: 40px;font-size: 18px;display: inline-block;padding-top: 7px;">MeterSphere Recorder</span>
 </div>
-<div style="width: 305px;padding: 10px 10px 0 10px;color: rgb(245, 245, 245);">
+<div style="width: 305px;padding: 10px 10px 0 10px;">
     <div class="container" id="main_page" style="height: 85px">
         <div class="text-center">
             <div class="row text-center" style="margin-bottom: 10px">
@@ -93,10 +95,12 @@
             </div>
         </div>
     </div>
-    <div id="main_download" style="display: none">
+    <div id="main_download" style="display: none;">
         <div id="checkboxs" style="margin-bottom: 10px;margin-top: 10px;"></div>
-        <div class="btn-group btn-group-sm" role="group" aria-label="...">
-            <button type="button" id="record_save" class="btn btn-default">下载</button>
+        <div style="text-align: center;margin-bottom: 5px">
+            <a href="#" id="record_save">
+                <span class="glyphicon  glyphicon-download-alt gi-1x"></span>
+            </a>
         </div>
     </div>
 </div>
