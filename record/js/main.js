@@ -1,11 +1,6 @@
 $(document).ready(function () {
     chrome.storage.local.get(null, function (item) {
-        if (!item.jmxName) {
-            item.jmxName = generateJmxName();
-            chrome.storage.local.set({"jmxName": item.jmxName});
-        }
-
-        if (!item.recordData || item.recordData.length < 1) {
+        if (!item.jmxName || !item.recordData || item.recordData.length < 1) {
             item.jmxName = generateJmxName();
             chrome.storage.local.set({"jmxName": item.jmxName});
         }
