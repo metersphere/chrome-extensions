@@ -83,7 +83,7 @@ $('#record_download').click(e => {
 
         $('#main_page').hide();
         $('#main_download').show();
-
+        $('#checkboxs').empty();
         domainList.forEach(function (domain) {
             $('#checkboxs').prepend(
                 "<div class=\"custom-control custom-checkbox\">\n" +
@@ -97,7 +97,7 @@ $('#record_download').click(e => {
 
 $('#record_save').click(e => {
     let domains = [];
-    $("input[name='domains']:checked").each(function(){
+    $("input[name='domains']:checked").each(function () {
         domains.push($(this).attr("id"));
     });
     chrome.storage.local.get(null, function (item) {
@@ -111,6 +111,12 @@ $('#record_save').click(e => {
         $('#main_page').show();
         $('#main_download').hide();
     });
+});
+
+
+$('#record_back').click(e => {
+    $('#main_page').show();
+    $('#main_download').hide();
 });
 
 
