@@ -7,20 +7,30 @@ var json = null;
 var options = {};
 var cache = false;
 var cookie = false;
+var op = null;
+
+
+function pauseRecording() {
+    chrome.storage.local.set({op: "pause"});
+}
+
+function resumeRecording() {
+    chrome.storage.local.set({op: "running"});
+}
 
 
 function stopRecording() {
     chrome.webRequest.onBeforeRequest.removeListener(onBeforeRequest);
     chrome.webRequest.onSendHeaders.removeListener(onSendHeaders);
     chrome.webRequest.onBeforeSendHeaders.removeListener(onBeforeSendHeaders);
-
     chrome.storage.local.set({isRecording: false});
+    chrome.storage.local.set({op: "stop"});
 }
 
 function startRecording() {
     body = {};
     recordData = [];
-    chrome.storage.local.set({"recordData": recordData},function () {
+    chrome.storage.local.set({"recordData": recordData}, function () {
 
         chrome.storage.local.get('options', function (items) {
             options = items.options;
@@ -75,201 +85,213 @@ function startRecording() {
                 ['requestHeaders']);
             delete (RequestFilter.types);
         });
+        chrome.storage.local.set({op: "running"});
 
         chrome.storage.local.set({isRecording: true});
     });
 }
 
 function onBeforeSendHeaders(info) {
-    if (info.requestHeaders) {
-        if (useragent && useragent != 'Current Browser') {
-            var headers = info.requestHeaders;
-            headers.forEach(function (header) {
-                if (header.name.toLowerCase() == 'user-agent') {
-                    header.value = useragent;
+    chrome.storage.local.get(null, function (item) {
+        if (item.op === 'running') {
+            if (info.requestHeaders) {
+                if (useragent && useragent != 'Current Browser') {
+                    var headers = info.requestHeaders;
+                    headers.forEach(function (header) {
+                        if (header.name.toLowerCase() == 'user-agent') {
+                            header.value = useragent;
+                        }
+                    });
+                    return {
+                        requestHeaders: headers
+                    };
                 }
-            });
-            return {
-                requestHeaders: headers
-            };
+            } else {
+                return {
+                    requestHeaders: []
+                };
+            }
         }
-    } else {
-        return {
-            requestHeaders: []
-        };
-    }
+    });
 }
 
 
 function onBeforeRequest(info) {
-    if (info.requestBody) {
-        var postData = '';
-        if (!info.requestBody.error) {
-            if (info.requestBody.formData) {
-                // If the request method is POST and the body is a sequence of key-value
-                // pairs encoded in UTF8,
-                // encoded as either multipart/form-data, or
-                // application/x-www-form-urlencoded
-                postData = info.requestBody.formData;
-                // switch array to string
-                for (var index in postData) {
-                    postData[index] = postData[index].toString();
-                }
-            } else {
-                // If the request method is PUT or POST, and the body is not already
-                // parsed in formData, then the
-                // unparsed request body elements are contained in this array.
-                postData = [];
-                if (info.requestBody.raw) {
-                    info.requestBody.raw.forEach(function (raw) {
-                        if (raw.bytes) {
-                            var bodyString = '';
-                            const bytes = new Uint8Array(raw.bytes);
-                            const bodyLength = bytes.length;
-                            for (var i = 0; i < bodyLength; i++) {
-                                bodyString += String.fromCharCode(bytes[i]);
-                            }
-                            postData.push(bodyString);
-                        } else {
-                            // @todo:support for file uploads
+    chrome.storage.local.get(null, function (item) {
+        if (item.op === 'running') {
+            if (info.requestBody) {
+                var postData = '';
+                if (!info.requestBody.error) {
+                    if (info.requestBody.formData) {
+                        // If the request method is POST and the body is a sequence of key-value
+                        // pairs encoded in UTF8,
+                        // encoded as either multipart/form-data, or
+                        // application/x-www-form-urlencoded
+                        postData = info.requestBody.formData;
+                        // switch array to string
+                        for (var index in postData) {
+                            postData[index] = postData[index].toString();
                         }
-                    });
-                }
-                // Encoding and Parsing Request Query String to key => value
-                var dataString = '';
-                for (var i = 0; i < postData.length; i++) {
-                    dataString += (postData[i]);
-                }
-                // Check if data is correct JSON string
-                try {
-                    var jsonParsedString = JSON.parse(dataString);
-                } catch (e) {
+                    } else {
+                        // If the request method is PUT or POST, and the body is not already
+                        // parsed in formData, then the
+                        // unparsed request body elements are contained in this array.
+                        postData = [];
+                        if (info.requestBody.raw) {
+                            info.requestBody.raw.forEach(function (raw) {
+                                if (raw.bytes) {
+                                    var bodyString = '';
+                                    const bytes = new Uint8Array(raw.bytes);
+                                    const bodyLength = bytes.length;
+                                    for (var i = 0; i < bodyLength; i++) {
+                                        bodyString += String.fromCharCode(bytes[i]);
+                                    }
+                                    postData.push(bodyString);
+                                } else {
+                                    // @todo:support for file uploads
+                                }
+                            });
+                        }
+                        // Encoding and Parsing Request Query String to key => value
+                        var dataString = '';
+                        for (var i = 0; i < postData.length; i++) {
+                            dataString += (postData[i]);
+                        }
+                        // Check if data is correct JSON string
+                        try {
+                            var jsonParsedString = JSON.parse(dataString);
+                        } catch (e) {
 
-                }
-                // If data is not correct JSON string parse it on key => value parameters
-                if (!jsonParsedString) {
-                    // Parsing Request Query String to key => value using URI.js library
-                    // http://medialize.github.io/URI.js/docs.html#static-parseQuery
-                    var parsedValue = URI.parseQuery(dataString);
-                    if (!$.isEmptyObject(parsedValue)) {
-                        // If query have not parsed not save it
-                        var notParseFlag = false;
-                        for (const prop in parsedValue) {
-                            // if query not parsed URI.parseQuery method returns
-                            // it like object with one property with null value
-                            if (prop === dataString && parsedValue[prop] === null) {
-                                notParseFlag = true;
-                            }
                         }
-                        if (!notParseFlag) {
-                            postData = parsedValue;
+                        // If data is not correct JSON string parse it on key => value parameters
+                        if (!jsonParsedString) {
+                            // Parsing Request Query String to key => value using URI.js library
+                            // http://medialize.github.io/URI.js/docs.html#static-parseQuery
+                            var parsedValue = URI.parseQuery(dataString);
+                            if (!$.isEmptyObject(parsedValue)) {
+                                // If query have not parsed not save it
+                                var notParseFlag = false;
+                                for (const prop in parsedValue) {
+                                    // if query not parsed URI.parseQuery method returns
+                                    // it like object with one property with null value
+                                    if (prop === dataString && parsedValue[prop] === null) {
+                                        notParseFlag = true;
+                                    }
+                                }
+                                if (!notParseFlag) {
+                                    postData = parsedValue;
+                                }
+                            }
                         }
                     }
+                } else {
+                    if (info.requestBody.error !== "Unknown error.") {
+                        // console.log(chrome.runtime.lastError);
+                        googleAnalytics('send', 'exception', {
+                            'exDescription': 'onBeforeRequest():' + chrome.runtime.lastError.message,
+                            'exFatal': false
+                        });
+                    }
                 }
-            }
-        } else {
-            if (info.requestBody.error !== "Unknown error.") {
-                // console.log(chrome.runtime.lastError);
-                googleAnalytics('send', 'exception', {
-                    'exDescription': 'onBeforeRequest():' + chrome.runtime.lastError.message,
-                    'exFatal': false
-                });
+                var key = info.method + info.requestId;
+                body[key] = postData;
             }
         }
-        var key = info.method + info.requestId;
-        body[key] = postData;
-    }
+    });
 }
 
 
 function onSendHeaders(info) {
     chrome.storage.local.get(null, function (items) {
-        chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
-            if (tabs.length > 0) {
-                if (tabs[0].hasOwnProperty('id')) {
-                    activeTabId = tabs[0].id;
-                }
-            }
-            if (info.tabId == activeTabId) {
-                if (info.url == 'https://fonts.googleapis.com/css?family=Open+Sans:400,600,700&blazemeter-chrome-extension=true') {
-                    //This exact url is used by Transaction Popup, ignore it
-                    return;
-                }
-
-                for (var headers_index in info.requestHeaders) {
-                    if (info.requestHeaders[headers_index].name == 'Origin') {
-                        //If Origin is chrome-extension:// then ignore this request
-                        if (info.requestHeaders[headers_index].value.startsWith('chrome-extension://')) {
-                            return;
-                        }
+        if (items.op === 'running') {
+            chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
+                if (tabs.length > 0) {
+                    if (tabs[0].hasOwnProperty('id')) {
+                        activeTabId = tabs[0].id;
                     }
                 }
+                if (info.tabId == activeTabId) {
+                    if (info.url == 'https://fonts.googleapis.com/css?family=Open+Sans:400,600,700&blazemeter-chrome-extension=true') {
+                        //This exact url is used by Transaction Popup, ignore it
+                        return;
+                    }
 
-                var key = info.method + info.requestId;
-                data = {};
-                var requestype = 'embedded';
-                var request_subtype = ''; //Only for AJAX requests
-                if (info.type == 'main_frame') {
-                    requestype = 'top_level';
-                } else if (info.type == 'xmlhttprequest') {
-                    requestype = 'ajax';
-                    //@todo: filter out by parentFrameId? If its not -1 then its coming from iframe.
                     for (var headers_index in info.requestHeaders) {
-                        if (info.requestHeaders[headers_index].name == 'Origin' ||
-                            info.requestHeaders[headers_index].name == 'Referer') {
-                            //@todo: since Origin header is mostly used in CORS mark any requests with Origin as embedded?
-                            var origin_host = (new URL(info.requestHeaders[headers_index].value)).hostname;
-                            if (isFromRoot(origin_host, info.url)) {
+                        if (info.requestHeaders[headers_index].name == 'Origin') {
+                            //If Origin is chrome-extension:// then ignore this request
+                            if (info.requestHeaders[headers_index].value.startsWith('chrome-extension://')) {
+                                return;
+                            }
+                        }
+                    }
 
-                                if (url_is_filepath(info.url)) {
-                                    //AJAX request is embedded file resource (JS, CSS, etc...)
-                                    request_subtype = 'embedded_resource';
+                    var key = info.method + info.requestId;
+                    data = {};
+                    var requestype = 'embedded';
+                    var request_subtype = ''; //Only for AJAX requests
+                    if (info.type == 'main_frame') {
+                        requestype = 'top_level';
+                    } else if (info.type == 'xmlhttprequest') {
+                        requestype = 'ajax';
+                        //@todo: filter out by parentFrameId? If its not -1 then its coming from iframe.
+                        for (var headers_index in info.requestHeaders) {
+                            if (info.requestHeaders[headers_index].name == 'Origin' ||
+                                info.requestHeaders[headers_index].name == 'Referer') {
+                                //@todo: since Origin header is mostly used in CORS mark any requests with Origin as embedded?
+                                var origin_host = (new URL(info.requestHeaders[headers_index].value)).hostname;
+                                if (isFromRoot(origin_host, info.url)) {
+
+                                    if (url_is_filepath(info.url)) {
+                                        //AJAX request is embedded file resource (JS, CSS, etc...)
+                                        request_subtype = 'embedded_resource';
+                                    } else {
+                                        //AJAX request is issued by an action from a user (eg: click, scrolling)
+                                        request_subtype = 'top_level';
+                                    }
                                 } else {
-                                    //AJAX request is issued by an action from a user (eg: click, scrolling)
-                                    request_subtype = 'top_level';
-                                }
-                            } else {
-                                //AJAX request from 3rd party domain, mostly issued due to a JS (eg: analytics, tracking, ads)
-                                request_subtype = 'embedded_external';
+                                    //AJAX request from 3rd party domain, mostly issued due to a JS (eg: analytics, tracking, ads)
+                                    request_subtype = 'embedded_external';
 
+                                }
+                                break;
+                            }
+                        }
+                    }
+
+                    data.url = data.label = info.url;
+                    data.method = info.method;
+                    if (body[key]) {
+                        data.body = body[key];
+                    }
+                    data.requestId = info.requestId;
+                    data.request_type = requestype;
+                    data.request_subtype = request_subtype;
+                    data.timestamp = Math.round(info.timeStamp); // in ns??
+                    data.tabId = info.tabId;
+                    data.headers = info.requestHeaders;
+
+                    for (var index in data.headers) {
+                        if (data.headers[index].name == 'Cookie') {
+                            if (!cookie) {
+                                // Don't record cookies
+                                data.headers.splice(index, 1);
+                            } else {
+                                // Store cookie in the
+                                var CookieArray = data.headers[index].value.split('; ');
+                                data.cookies = CookieArray;
                             }
                             break;
                         }
                     }
-                }
 
-                data.url = data.label = info.url;
-                data.method = info.method;
-                if (body[key]) {
-                    data.body = body[key];
+                    recordData.push(data);
+                    chrome.storage.local.set({
+                        "recordData": recordData
+                    });
                 }
-                data.requestId = info.requestId;
-                data.request_type = requestype;
-                data.request_subtype = request_subtype;
-                data.timestamp = Math.round(info.timeStamp); // in ns??
-                data.tabId = info.tabId;
-                data.headers = info.requestHeaders;
+            });
+        }
 
-                for (var index in data.headers) {
-                    if (data.headers[index].name == 'Cookie') {
-                        if (!cookie) {
-                            // Don't record cookies
-                            data.headers.splice(index, 1);
-                        } else {
-                            // Store cookie in the
-                            var CookieArray = data.headers[index].value.split('; ');
-                            data.cookies = CookieArray;
-                        }
-                        break;
-                    }
-                }
-
-                recordData.push(data);
-                chrome.storage.local.set({
-                    "recordData": recordData
-                });
-            }
-        });
     });
 }
 

@@ -34,6 +34,17 @@ $(document).ready(function () {
             $('#record_download').hide();
             $('#record_stop').show();
             $('#record_start').hide();
+            if (item.op === 'running') {
+                $('#record_pause').show();
+                $('#record_resume').hide();
+            } else if (item.op === 'pause') {
+                $('#record_pause').hide();
+                $('#record_resume').show();
+            } else {
+                //不可能的状况
+                $('#record_pause').hide();
+                $('#record_resume').hide();
+            }
         } else {
             if (item.recordData.length > 0) {
                 $('#record_download').show();
@@ -42,6 +53,8 @@ $(document).ready(function () {
             }
             $('#record_stop').hide();
             $('#record_start').show();
+            $('#record_pause').hide();
+            $('#record_resume').hide();
         }
     });
 });
@@ -55,9 +68,24 @@ $("#jmx_name").change(e => {
 $('#record_start').click(e => {
     $('#record_download').hide();
     $('#record_stop').show();
+    $('#record_pause').show();
     let bg = chrome.extension.getBackgroundPage();
     bg.startRecording();
     $('#record_start').hide();
+});
+
+$('#record_pause').click(e => {
+    let bg = chrome.extension.getBackgroundPage();
+    bg.pauseRecording();
+    $('#record_resume').show();
+    $('#record_pause').hide();
+});
+
+$('#record_resume').click(e => {
+    let bg = chrome.extension.getBackgroundPage();
+    bg.resumeRecording();
+    $('#record_pause').show();
+    $('#record_resume').hide();
 });
 
 $('#record_stop').click(e => {
@@ -65,6 +93,8 @@ $('#record_stop').click(e => {
     bg.stopRecording();
     $('#record_start').show();
     $('#record_stop').hide();
+    $('#record_pause').hide();
+    $('#record_resume').hide();
     chrome.storage.local.get(null, function (item) {
         if (item.recordData.length > 0) {
             $('#record_download').show();
