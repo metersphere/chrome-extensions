@@ -1,4 +1,4 @@
-# metersphere-chrome-plugin
+# metersphere-chrome-extensions
 
 
 
