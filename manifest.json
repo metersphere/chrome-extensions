@@ -4,15 +4,15 @@
   "description": "MeterSphere Fit2cloud",
   "version": "1.0.0",
   "browser_action": {
-    "default_icon": "record/icon/favicon.png",
-    "default_popup": "record/html/main.html",
+    "default_icon": "icon/favicon.png",
+    "default_popup": "main.html",
     "default_title": "MeterSphere"
   },
   "background": {
     "scripts": [
-      "record/js/background.js",
-      "record/js/jquery-3.4.1.min.js",
-      "record/js/URI.js"
+      "js/background.js",
+      "js/jquery-3.4.1.min.js",
+      "js/URI.js"
     ]
   },
   "content_security_policy": "script-src 'self' https://www.google-analytics.com https://cdn.mxpnl.com/libs/mixpanel-2.2.min.js; object-src 'self'",
