@@ -3,6 +3,7 @@
   "name": "MeterSphere",
   "description": "MeterSphere Fit2cloud",
   "version": "1.0.0",
+  "homepage_url": "https://www.fit2cloud.com",
   "browser_action": {
     "default_icon": "icon/favicon.png",
     "default_popup": "main.html",
@@ -10,24 +11,66 @@
   },
   "background": {
     "scripts": [
-      "js/background.js",
       "js/jquery-3.4.1.min.js",
+      "common/browser-polyfill.js",
+      "background/background.js",
+      "js/background.js",
       "js/URI.js"
     ]
   },
-  "content_security_policy": "script-src 'self' https://www.google-analytics.com https://cdn.mxpnl.com/libs/mixpanel-2.2.min.js; object-src 'self'",
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content/atoms.js",
+        "content/utils.js",
+        "content/selenium-browserbot.js",
+        "common/escape.js",
+        "content/selenium-api.js",
+        "content/locatorBuilders.js",
+        "content/recorder.js",
+        "content/recorder-handlers.js",
+        "content/command-receiver.js",
+        "content/targetSelecter.js",
+        "content/sizzle.js"
+      ],
+      "match_about_blank": true,
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "common/browser-polyfill.js",
+        "content/prompt-injecter.js",
+        "content/runScript-injecter.js"
+      ],
+      "match_about_blank": true,
+      "all_frames": true,
+      "run_at": "document_start"
+    }
+  ],
+  "content_security_policy": "script-src 'self'; object-src 'self'",
   "permissions": [
+    "tabs",
+    "activeTab",
+    "webRequest",
+    "contextMenus",
+    "downloads",
+    "webNavigation",
+    "notifications",
     "storage",
     "unlimitedStorage",
-    "webRequest",
-    "webNavigation",
     "webRequestBlocking",
     "http://*/*",
     "https://*/*",
-    "browsingData",
-    "activeTab",
-    "tabs",
-    "notifications",
-    "contextMenus"
+    "browsingData"
+  ],
+  "web_accessible_resources": [
+    "page/prompt.js",
+    "page/runScript.js"
   ]
 }
