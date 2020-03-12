@@ -90,7 +90,7 @@ browser.windows.onRemoved.addListener(function (windowId) {
         if (master[key] === windowId) {
             delete master[key];
             if (keys.length === 1) {
-                browser.contextMenus.removeAll();
+                //browser.contextMenus.removeAll();
             }
         }
     }
@@ -162,10 +162,10 @@ chrome.contextMenus.create({
     }
 });
 
-var port;
-browser.runtime.onConnect.addListener(function (m) {
-    port = m;
-});
-browser.contextMenus.onClicked.addListener(function (info, tab) {
-    port.postMessage({cmd: info.menuItemId});
-});
+// var port;
+// browser.runtime.onConnect.addListener(function (m) {
+//     port = m;
+// });
+// browser.contextMenus.onClicked.addListener(function (info, tab) {
+//     port.postMessage({cmd: info.menuItemId});
+// });

@@ -9,6 +9,11 @@
     "default_popup": "main.html",
     "default_title": "MeterSphere"
   },
+  "icons": {
+    "16": "icon/favicon.png",
+    "48": "icon/favicon.png",
+    "128": "icon/favicon.png"
+  },
   "background": {
     "scripts": [
       "js/jquery-3.4.1.min.js",

@@ -57,42 +57,42 @@ function panelToFile(str) {
     var tr = str.match(/<tr>[\s\S]*?<\/tr>/gi);
     temp_str = str;
     str = "\n";
-    if(tr)
-    for (var i = 0; i < tr.length; ++i) {
-        var pattern = tr[i].match(/([\s]*?)(?:<td[\b\s\S]*>)([\s\S]*?)(?:<\/td>)([\s]*?)(?:<td>)([\s\S]*?)(?:<datalist>)([\s\S]*?)(?:<\/datalist><\/td>)([\s]*?)(?:<td>)([\s\S]*?)(?:<\/td>)/);
-        if (!pattern) {
-            str = temp_str;
-            break;
-        }
+    if (tr)
+        for (var i = 0; i < tr.length; ++i) {
+            var pattern = tr[i].match(/([\s]*?)(?:<td[\b\s\S]*>)([\s\S]*?)(?:<\/td>)([\s]*?)(?:<td>)([\s\S]*?)(?:<datalist>)([\s\S]*?)(?:<\/datalist><\/td>)([\s]*?)(?:<td>)([\s\S]*?)(?:<\/td>)/);
+            if (!pattern) {
+                str = temp_str;
+                break;
+            }
 
-        var option = pattern[5].match(/<option>[\s\S]*?<\/option>/gi);
-        
-        str = str + "<tr>" + pattern[1] + "<td>" + pattern[2] + "</td>" + pattern[3] + "<td>" + pattern[4].replace(/\n\s+/g, "") + "<datalist>";
-        for (var j = 0; j < option.length; ++j) {
-            option[j] = option[j].replace(/<option>/, "").replace(/<\/option>/, "");
-            str = str + "<option>" + option[j] + "</option>";
+            var option = pattern[5].match(/<option>[\s\S]*?<\/option>/gi);
+
+            str = str + "<tr>" + pattern[1] + "<td>" + pattern[2] + "</td>" + pattern[3] + "<td>" + pattern[4].replace(/\n\s+/g, "") + "<datalist>";
+            for (var j = 0; j < option.length; ++j) {
+                option[j] = option[j].replace(/<option>/, "").replace(/<\/option>/, "");
+                str = str + "<option>" + option[j] + "</option>";
+            }
+            str = str + "</datalist></td>" + pattern[6] + "<td>" + pattern[7] + "</td>\n</tr>\n";
         }
-        str = str + "</datalist></td>" + pattern[6] + "<td>" + pattern[7] + "</td>\n</tr>\n";
-    }
     str = '<tbody>' + str + '</tbody>';
     return str;
 }
 
-var textFile = null,
-    makeTextFile = function(text) {
-        var data = new Blob([text], {
-            type: 'text/html'
-        });
-        // If we are replacing a previously generated file we need to
-        // manually revoke the object URL to avoid memory leaks.
-        if (textFile !== null) {
-            window.URL.revokeObjectURL(textFile);
-        }
-        textFile = window.URL.createObjectURL(data);
-        return textFile;
-    };
+// var textFile = null,
+//     makeTextFile = function (text) {
+//         var data = new Blob([text], {
+//             type: 'text/html'
+//         });
+//         // If we are replacing a previously generated file we need to
+//         // manually revoke the object URL to avoid memory leaks.
+//         if (textFile !== null) {
+//             window.URL.revokeObjectURL(textFile);
+//         }
+//         textFile = window.URL.createObjectURL(data);
+//         return textFile;
+//     };
 
-function downloadSuite1(s_suite,callback) {
+function downloadSuite1(s_suite, callback) {
     if (s_suite) {
         var cases = s_suite.getElementsByTagName("p"),
             output = "",
@@ -130,13 +130,13 @@ function downloadSuite1(s_suite,callback) {
             conflictAction: 'overwrite'
         });
 
-        var result = function(id) {
+        var result = function (id) {
             browser.downloads.onChanged.addListener(function downloadCompleted(downloadDelta) {
                 if (downloadDelta.id == id && downloadDelta.state &&
                     downloadDelta.state.current == "complete") {
                     browser.downloads.search({
                         id: downloadDelta.id
-                    }).then(function(download){
+                    }).then(function (download) {
                         download = download[0];
                         f_name = download.filename.split(/\\|\//).pop();
                         sideex_testSuite[s_suite.id].file_name = f_name;
@@ -155,7 +155,7 @@ function downloadSuite1(s_suite,callback) {
             })
         };
 
-        var onError = function(error) {
+        var onError = function (error) {
             console.log(error);
         };
 
@@ -165,7 +165,7 @@ function downloadSuite1(s_suite,callback) {
     }
 }
 
-document.getElementById('save-testSuite').addEventListener('click', function(event) {
+document.getElementById('save-testSuite').addEventListener('click', function (event) {
     event.stopPropagation();
     var s_suite = getSelectedSuite();
     downloadSuite(s_suite);
@@ -174,7 +174,7 @@ document.getElementById('save-testSuite').addEventListener('click', function(eve
 function savelog() {
     var now = new Date();
     var date = now.getDate();
-    var month = now.getMonth()+1;
+    var month = now.getMonth() + 1;
     var year = now.getFullYear();
     var seconds = now.getSeconds();
     var minutes = now.getMinutes();
@@ -183,7 +183,7 @@ function savelog() {
     var logcontext = "";
     var logcontainer = document.getElementById('logcontainer');
     for (var i = 0; i < logcontainer.childNodes.length; i++) {
-        logcontext = logcontext + logcontainer.childNodes[i].textContent + '\n' ;
+        logcontext = logcontext + logcontainer.childNodes[i].textContent + '\n';
     }
     var link = makeTextFile(logcontext);
 
@@ -232,8 +232,9 @@ function getSuiteJSON(s_suite) {
 function downloadSuite(s_suite, callback) {
     if (s_suite) {
         var suite_json = getSuiteJSON(s_suite);
-        var f_name = suite_json.suite_name + ".json",
-            link = makeTextFile(suite_json.output);
+        var f_name = suite_json.suite_name,
+            //link = makeTextFile(suite_json.output);
+            link = suite_json.output;
 
         downloadFile(f_name, link);
     } else {
@@ -242,11 +243,12 @@ function downloadSuite(s_suite, callback) {
 }
 
 function downloadFile(file_name, data) {
-    var fakelink = $('<a>Download</a>');
-    fakelink.attr('download', file_name);
-    fakelink.attr('href', data);
-    fakelink[0].click();
-    fakelink.remove();
+    let blob = new Blob([data], {type: "application/octet-stream"});
+    let link = document.createElement('a');
+    link.href = window.URL.createObjectURL(blob);
+    link.download = file_name + ".json";
+    link.click();
+    window.URL.revokeObjectURL(link.href);
 }
 
 
