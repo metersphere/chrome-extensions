@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "MeterSphere",
-  "description": "MeterSphere Fit2cloud",
+  "description": "MeterSphere FIT2CLOUD",
   "version": "1.0.0",
   "homepage_url": "https://www.fit2cloud.com",
   "browser_action": {
