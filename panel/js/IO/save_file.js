@@ -92,7 +92,7 @@ var textFile = null,
         return textFile;
     };
 
-function downloadSuite(s_suite,callback) {
+function downloadSuite1(s_suite,callback) {
     if (s_suite) {
         var cases = s_suite.getElementsByTagName("p"),
             output = "",
@@ -193,4 +193,99 @@ function savelog() {
         saveAs: true,
         conflictAction: 'overwrite'
     });
+}
+
+
+function getSuiteJSON(s_suite) {
+    var cases = s_suite.getElementsByTagName("p"),
+        output = "",
+        old_case = getSelectedCase();
+    for (var i = 0; i < cases.length; ++i) {
+        setSelectedCase(cases[i].id);
+        saveNewTarget();
+        if (i > 0) {
+            output += ",";
+        }
+        output = output +
+            '{"testStep":"' +
+            sideex_testCase[cases[i].id].title +
+            '", \n\t\t "commands": [\n\t\t\t' +
+            panelToJSON(document.getElementById("records-grid").innerHTML) +
+            '\n\t\t\t]}\n';
+    }
+    output = '{\n\t "suite":"' +
+        sideex_testSuite[s_suite.id].title +
+        '",\n\t "test_cases":[\n\t\t' +
+        output +
+        ']}';
+
+    if (old_case) {
+        setSelectedCase(old_case.id);
+    } else {
+        setSelectedSuite(s_suite.id);
+    }
+    suite_name = sideex_testSuite[s_suite.id].file_name.replace(".html", "");
+
+    return {suite_name: suite_name, output: output};
+}
+
+function downloadSuite(s_suite, callback) {
+    if (s_suite) {
+        var suite_json = getSuiteJSON(s_suite);
+        var f_name = suite_json.suite_name + ".json",
+            link = makeTextFile(suite_json.output);
+
+        downloadFile(f_name, link);
+    } else {
+        alert("Choose a test suite to download!");
+    }
+}
+
+function downloadFile(file_name, data) {
+    var fakelink = $('<a>Download</a>');
+    fakelink.attr('download', file_name);
+    fakelink.attr('href', data);
+    fakelink[0].click();
+    fakelink.remove();
+}
+
+
+function panelToJSON(str) {
+    if (!str) {
+        return null;
+    }
+    str = str.replace(/<div style="overflow[\s\S]+?">[\s\S]*?<\/div>/gi, "")
+        .replace(/<div style="display[\s\S]+?">/gi, "")
+        .replace(/<\/div>/gi, "")
+        .replace(/<input[\s\S]+?>/, "")
+        .replace(/<tr[\s\S]+?>/gi, "<tr>");
+
+    var tr = str.match(/<tr>[\s\S]*?<\/tr>/gi);
+    temp_str = str;
+    str = "\n";
+    if (tr)
+        for (var i = 0; i < tr.length; ++i) {
+            var pattern = tr[i].match(/([\s]*?)(?:<td[\b\s\S]*>)([\s\S]*?)(?:<\/td>)([\s]*?)(?:<td>)([\s\S]*?)(?:<datalist>)([\s\S]*?)(?:<\/datalist><\/td>)([\s]*?)(?:<td>)([\s\S]*?)(?:<\/td>)/);
+            if (!pattern) {
+                str = temp_str;
+                break;
+            }
+
+            var option = pattern[5].match(/<option>[\s\S]*?<\/option>/gi);
+
+            str = str + '\n\t\t\t{"command":"' + pattern[1].trim() + pattern[2].trim() + '", "arg":"' + pattern[3].trim() + '", "target":"' + pattern[4].replace(/\n\s+/g, "").trim().replace("\n", "\\n") + ' ", "datalist":[';
+            for (var j = 0; j < option.length; ++j) {
+                option[j] = option[j].replace(/<option>/, "").replace(/<\/option>/, "");
+                str = str.trim() + '"' + option[j].trim().replace("\n", "\\n") + '"';
+                if (j < (option.length - 1)) {
+                    str += ","
+                }
+            }
+            str = str.trim() + "]" + pattern[6].trim() + ' , "value":"' + pattern[7] + '"}';
+            if (i < (tr.length - 1)) {
+                str += ","
+            }
+        }
+    str = '' + str + '';
+    return str;
 }
