@@ -82,7 +82,7 @@ function openPanel(tab) {
 
 }
 
-// browser.browserAction.onClicked.addListener(openPanel);
+//browser.browserAction.onClicked.addListener(openPanel);
 
 browser.windows.onRemoved.addListener(function (windowId) {
     let keys = Object.keys(master);
@@ -152,6 +152,15 @@ function createMenus() {
         contexts: ["all"]
     });
 }
+
+chrome.contextMenus.create({
+    title: '功能录制',
+    onclick: function (params) {
+        chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
+            openPanel(tabs[0])
+        });
+    }
+});
 
 var port;
 browser.runtime.onConnect.addListener(function (m) {

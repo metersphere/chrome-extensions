@@ -18,11 +18,6 @@ function resumeRecording() {
     chrome.storage.local.set({op: "running"});
 }
 
-chrome.contextMenus.create({
-    title: "功能录制",
-    onclick: openPanel
-});
-
 function stopRecording() {
     chrome.webRequest.onBeforeRequest.removeListener(onBeforeRequest);
     chrome.webRequest.onSendHeaders.removeListener(onSendHeaders);
