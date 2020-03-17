@@ -175,3 +175,10 @@ function generateJmxName() {
 
     return ["RECORD", year, month, day, hour, min].join('-');
 }
+
+$('#sideex_start').click(e => {
+    chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
+        let bg = chrome.extension.getBackgroundPage();
+        bg.openPanel(tabs[0]);
+    });
+});
