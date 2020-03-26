@@ -74,60 +74,35 @@
     <a class="logo"></a>
     <span style="height: 40px;font-size: 18px;display: inline-block;padding-top: 7px;">MeterSphere Recorder</span>
 </div>
-<div style="width: 305px;">
-    <div class="container" id="main_page" style="height: 130px">
-        <ul class="nav nav-tabs" id="myTab" role="tablist">
-            <li class="nav-item active">
-                <a class="nav-link active" id="home-tab" data-toggle="tab" href="#home" role="tab" aria-controls="home"
-                   aria-selected="true">Jmeter录制</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" id="profile-tab" data-toggle="tab" href="#profile" role="tab"
-                   aria-controls="profile"
-                   aria-selected="false">功能录制</a>
-            </li>
-        </ul>
-        <div class="tab-content" id="myTabContent">
-            <div class="tab-pane fade active in" id="home" role="tabpanel" aria-labelledby="home-tab">
-                <div class="text-center" style="padding: 10px 15px  10px 15px">
-                    <div class="row text-center" style="margin-bottom: 10px">
-                        <input type="text" id="jmx_name" class="form-control" placeholder="脚本名称" aria-label="脚本名称"
-                               aria-describedby="basic-addon1">
-                    </div>
-                    <div class="row">
-                        <a href="#" id="record_start" style="display: none">
+<div style="width: 305px;padding: 10px 10px 0 10px;">
+    <div class="container" id="main_page" style="height: 85px">
+        <div class="text-center">
+            <div class="row text-center" style="margin-bottom: 10px">
+                <input type="text" id="jmx_name" class="form-control" placeholder="脚本名称" aria-label="脚本名称"
+                       aria-describedby="basic-addon1">
+            </div>
+            <div class="row">
+                <a href="#" id="record_start" style="display: none">
                     <span class="glyphicon glyphicon-play-circle gi-1x" data-toggle="tooltip" data-placement="right"
                           title="录制"></span>
-                        </a>
-                        <a href="#" id="record_pause" style="display: none">
+                </a>
+                <a href="#" id="record_pause" style="display: none">
                     <span class="glyphicon glyphicon-pause gi-1x" data-toggle="tooltip" data-placement="right"
                           title="暂停"></span>
-                        </a>
-                        <a href="#" id="record_resume" style="display: none">
+                </a>
+                <a href="#" id="record_resume" style="display: none">
                     <span class="glyphicon glyphicon-record gi-1x" data-toggle="tooltip" data-placement="right"
                           title="恢复"></span>
-                        </a>
-                        <a href="#" id="record_stop" style="display: none">
+                </a>
+                <a href="#" id="record_stop" style="display: none">
                     <span class="glyphicon glyphicon-stop gi-1x" data-toggle="tooltip" data-placement="right"
                           title="停止"></span>
-                        </a>
+                </a>
 
-                        <a href="#" id="record_download" style="display: none;margin-left: 5px">
+                <a href="#" id="record_download" style="display: none;margin-left: 5px">
                     <span class="glyphicon glyphicon-saved gi-1x" data-toggle="tooltip" data-placement="right"
                           title="保存"></span>
-                        </a>
-                    </div>
-                </div>
-            </div>
-            <div class="tab-pane fade" id="profile" role="tabpanel" aria-labelledby="profile-tab">
-                <div class="text-center" style="padding: 10px 15px  10px 15px;margin-top: 15px">
-                    <div class="row">
-                        <a href="#" id="sideex_start">
-                    <span class="glyphicon glyphicon-play-circle gi-1x" data-toggle="tooltip" data-placement="right"
-                          title="录制"></span>
-                        </a>
-                    </div>
-                </div>
+                </a>
             </div>
         </div>
     </div>

@@ -153,14 +153,14 @@ function createMenus() {
     });
 }
 
-chrome.contextMenus.create({
-    title: '功能录制',
-    onclick: function (params) {
-        chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
-            openPanel(tabs[0])
-        });
-    }
-});
+// chrome.contextMenus.create({
+//     title: '功能录制',
+//     onclick: function (params) {
+//         chrome.tabs.query({'active': true, 'lastFocusedWindow': true}, function (tabs) {
+//             openPanel(tabs[0])
+//         });
+//     }
+// });
 
 // var port;
 // browser.runtime.onConnect.addListener(function (m) {
