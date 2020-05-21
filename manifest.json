@@ -1,9 +1,9 @@
 {
   "manifest_version": 2,
   "name": "MeterSphere",
-  "description": "MeterSphere FIT2CLOUD",
+  "description": "MeterSphere Recorder",
   "version": "1.0.0",
-  "homepage_url": "https://www.fit2cloud.com",
+  "homepage_url": "https://www.metersphere.io",
   "browser_action": {
     "default_icon": "icon/favicon.png",
     "default_popup": "main.html",
