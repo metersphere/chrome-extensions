@@ -136,8 +136,9 @@ $('#record_save').click(e => {
         domains.push($(this).attr("id"));
     });
     chrome.storage.local.get(null, function (item) {
-        let jmx = new Jmx(item.recordData, item.jmxName, domains);
-        let blob = new Blob([jmx.generate()], {type: "application/octet-stream"});
+        let jmx = new JMXGenerator(item.recordData, item.jmxName, domains);
+        // let jmx = new Jmx(item.recordData, item.jmxName, domains);
+        let blob = new Blob([jmx.toXML()], {type: "application/octet-stream"});
         let link = document.createElement('a');
         link.href = window.URL.createObjectURL(blob);
         link.download = item.jmxName + ".jmx";
