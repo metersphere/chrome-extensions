@@ -261,66 +261,6 @@ class HTTPSamplerArguments extends Element {
     }
 }
 
-class DurationAssertion extends DefaultTestElement {
-    constructor(testName, duration) {
-        super('DurationAssertion', 'DurationAssertionGui', 'DurationAssertion', testName);
-        this.duration = duration || 0;
-        this.stringProp('DurationAssertion.duration', this.duration);
-    }
-}
-
-class ResponseAssertion extends DefaultTestElement {
-    constructor(testName, assertion) {
-        super('ResponseAssertion', 'AssertionGui', 'ResponseAssertion', testName);
-        this.assertion = assertion || {};
-
-        this.stringProp('Assertion.test_field', this.assertion.field);
-        this.boolProp('Assertion.assume_success', false);
-        this.intProp('Assertion.test_type', this.assertion.type);
-        this.stringProp('Assertion.custom_message', this.assertion.message);
-
-        let collectionProp = this.collectionProp('Asserion.test_strings');
-        let random = Math.floor(Math.random() * 10000);
-        collectionProp.stringProp(random, this.assertion.value);
-    }
-}
-
-class ResponseCodeAssertion extends ResponseAssertion {
-    constructor(testName, type, value, message) {
-        let assertion = {
-            field: 'Assertion.response_code',
-            type: type,
-            value: value,
-            message: message,
-        }
-        super(testName, assertion)
-    }
-}
-
-class ResponseDataAssertion extends ResponseAssertion {
-    constructor(testName, type, value, message) {
-        let assertion = {
-            field: 'Assertion.response_data',
-            type: type,
-            value: value,
-            message: message,
-        }
-        super(testName, assertion)
-    }
-}
-
-class ResponseHeadersAssertion extends ResponseAssertion {
-    constructor(testName, type, value, message) {
-        let assertion = {
-            field: 'Assertion.response_headers',
-            type: type,
-            value: value,
-            message: message,
-        }
-        super(testName, assertion)
-    }
-}
-
 class HeaderManager extends DefaultTestElement {
     constructor(testName, headers) {
         super('HeaderManager', 'HeaderPanel', 'HeaderManager', testName);
@@ -450,41 +390,6 @@ class ElementArguments extends Element {
                 elementProp.stringProp('Argument.metadata', arg.metadata, "=");
             });
         }
-    }
-}
-
-class RegexExtractor extends DefaultTestElement {
-    constructor(testName, props) {
-        super('RegexExtractor', 'RegexExtractorGui', 'RegexExtractor', testName);
-        this.props = props || {}
-        this.stringProp('RegexExtractor.useHeaders', props.headers);
-        this.stringProp('RegexExtractor.refname', props.name);
-        this.stringProp('RegexExtractor.regex', props.expression);
-        this.stringProp('RegexExtractor.template', props.template);
-        this.stringProp('RegexExtractor.default', props.default);
-        this.stringProp('RegexExtractor.match_number', props.match);
-    }
-}
-
-class JSONPostProcessor extends DefaultTestElement {
-    constructor(testName, props) {
-        super('JSONPostProcessor', 'JSONPostProcessorGui', 'JSONPostProcessor', testName);
-        this.props = props || {}
-        this.stringProp('JSONPostProcessor.referenceNames', props.name);
-        this.stringProp('JSONPostProcessor.jsonPathExprs', props.expression);
-        this.stringProp('JSONPostProcessor.match_numbers', props.match);
-    }
-}
-
-class XPath2Extractor extends DefaultTestElement {
-    constructor(testName, props) {
-        super('XPath2Extractor', 'XPath2ExtractorGui', 'XPath2Extractor', testName);
-        this.props = props || {}
-        this.stringProp('XPathExtractor2.default', props.default);
-        this.stringProp('XPathExtractor2.refname', props.name);
-        this.stringProp('XPathExtractor2.xpathQuery', props.expression);
-        this.stringProp('XPathExtractor2.namespaces', props.namespaces);
-        this.stringProp('XPathExtractor2.matchNumber', props.match);
     }
 }
 
