@@ -122,7 +122,7 @@ $('#record_download').click(e => {
         domainList.forEach(function (domain) {
             $('#checkboxs').prepend(
                 "<div class=\"custom-control custom-checkbox\">\n" +
-                "            <input type=\"checkbox\" class=\"custom-control-input\" name=\"domains\" id=\"" + domain + "\">\n" +
+                "            <input type=\"checkbox\" class=\"custom-control-input\" name=\"domains\" id=\"" + domain + "\" checked>\n" +
                 "            <label class=\"custom-control-label\" for=\"" + domain + "\">" + domain + "</label>\n" +
                 "        </div>"
             )
