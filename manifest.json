@@ -10,9 +10,9 @@
     "default_title": "MeterSphere"
   },
   "icons": {
-    "16": "icon/favicon.png",
+    "16": "icon/favicon-16.png",
     "48": "icon/favicon.png",
-    "128": "icon/favicon.png"
+    "128": "icon/favicon-128.png"
   },
   "background": {
     "scripts": [
