@@ -7,7 +7,7 @@
 
 ### 开发者模式安装
   1. 谷歌浏览器输入chrome://extensions/ 进入扩展程序安装界面，打开开发者模式
-  2. 导入扩展程序有的方式
+  2. 导入扩展程序以下两种方式
      - git clone 该项目到本地，选择「加载已解压的扩展程序」选择该项目目录进行安装
      - 在该项目的 [release](https://github.com/metersphere/chrome-extensions/releases) 页面下载最新版本的 zip 包，将 zip 包拖到浏览器扩展程序页面进行安装
 
