@@ -1,6 +1,6 @@
 # MeterSphere 浏览器插件
 
-[MeterSphere](https://github.com/metersphere/metersphere) 是一站式的开源企业级持续测试平台，涵盖测试用例管理、接口测试、性能测试、Mock 服务等功能，兼容JMeter 等开源标准，有效助力开发和测试团队充分利用云弹性进行高度可扩展的自动化测试，加速高质量软件的交付。
+[MeterSphere](https://github.com/metersphere/metersphere) 是一站式的开源企业级持续测试平台，涵盖测试跟踪、接口测试、性能测试、团队协作等功能，兼容JMeter 等开源标准，有效助力开发和测试团队充分利用云弹性进行高度可扩展的自动化测试，加速高质量软件的交付。
 该项目为 MeterSphere 配套的浏览器插件，该插件可将用户在浏览器操作时的 HTTP 请求记录下来并生成 JMX 文件（JMeter 脚本文件），用于在 MeterSphere 中进行接口测试或性能测试。
 
 ## 安装使用
