@@ -5,6 +5,10 @@
 
 ## 安装使用
 
+### Chrome 应用商店安装
+
+https://chrome.google.com/webstore/detail/metersphere/dfikodepgdmofjbffdhpakgkachehgdj
+
 ### 开发者模式安装
   1. 谷歌浏览器输入chrome://extensions/ 进入扩展程序安装界面，打开开发者模式
   2. 导入扩展程序以下两种方式
