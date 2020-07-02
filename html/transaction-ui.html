@@ -1,0 +1,177 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>MeterSphere Record</title>
+    <script src="../common/browser-polyfill.js"></script>
+    <script src="../jquery/jquery-3.4.1.min.js"></script>
+    <script src="../js/transaction-ui.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #transaction-content {
+            color: #494961;
+            font-size: 12px;
+        }
+
+        #transaction-content #status {
+            display: block;
+            width: 100%;
+            height: 15px;
+            margin: 15px 0 0 5px;
+            color: #E35353;
+        }
+
+        .disabled {
+            background: #bbb !important;
+            border-color: #bbb !important;
+        }
+
+        #transaction-content button {
+            height: 33px;
+            width: 77px;
+            background: #4488d9;
+            border: 1px #4488d9 solid;
+            border-radius: 3px;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        #transaction-content .input-error {
+            border: 1px solid #E35353;
+        }
+
+        #transaction-content button:hover {
+            background: #669ddc;
+        }
+
+        #transaction-content button:focus, input:focus {
+            outline: none;
+        }
+
+        #transaction_name {
+            height: 34px;
+            border: 1px solid #dde7ee;
+            padding-left: 10px;
+            padding-right: 10px;
+            border-radius: 3px;
+            outline: none;
+            font-size: 12px;
+            color: rgba(54, 54, 54, 0.8);
+            position: relative;
+            margin: 10px -5px 10px 10px;
+            width: 260px;
+            transition: all .2s ease-out;
+        }
+
+        #transaction_name::-webkit-input-placeholder {
+            color: #aaa;
+        }
+
+        #transaction-list {
+            padding: 10px;
+            margin: 0;
+            overflow-y: scroll;
+            overflow-x: auto;
+            height: 104px;
+        }
+
+        #transaction-content ul {
+            list-style: none;
+            padding-left: 0px;
+            font-size: 11px;
+        }
+
+        #transaction-content .transaction-input {
+            width: 257px;
+            cursor: pointer;
+            background: #fff;
+            display: none;
+            border: 1px solid #dde7ed;
+            border-radius: 3px;
+            padding: 5px 5px 5px 10px;
+            color: #91b0d7;
+            margin-right: 3px;
+        }
+
+        #transaction-content ul li {
+            color: gray;
+        }
+
+        #transaction-content ul li .transaction-name {
+            width: 268px;
+            padding-top: 5px;
+            padding-left: 10px;
+            display: inline-block;
+            cursor: pointer;
+            border: 1px solid transparent;
+            box-sizing: border-box;
+            margin-right: 0;
+            overflow-wrap: break-word;
+        }
+
+        #transaction-content ul li:last-child {
+            color: #494961;
+        }
+
+        #transaction-content ul li:last-child {
+            font-weight: bold;
+        }
+
+        #transaction-content ul li .transaction-name:hover {
+            background: #fff;
+            width: 251px;
+            border: 1px solid #dde7ed;
+            border-radius: 3px;
+            color: #91b0d7;
+            padding: 5px 5px 5px 10px;
+            box-sizing: content-box;
+        }
+
+        #transaction-content .transaction-bottom {
+            background: #fff;
+        }
+
+        #transaction-content .transaction-title {
+            font-weight: 500;
+        }
+
+        #transaction-content .counter-description {
+            float: right;
+            margin-right: 10px;
+        }
+
+        #transaction-content.mac .counter-description {
+            margin-right: 21px;
+        }
+
+        .footer {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            background-color: #efefef;
+        }
+    </style>
+</head>
+<body>
+<div id="transaction-content">
+    <div id="transaction-list">
+        <div class="list-title">
+            <span class="transaction-title">
+                <label>测试用例 / 标签</label>
+            </span>
+            <span class="counter-description">JMX</span>
+        </div>
+        <ul id="transactions">
+        </ul>
+    </div>
+    <div class="footer transaction-bottom">
+        <input type="text" id="transaction_name" disabled/>
+        <button id="add-transaction" class="disabled" disabled>添加</button>
+    </div>
+</div>
+</body>
+</html>

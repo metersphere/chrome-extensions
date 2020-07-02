@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Recorder Controller</title>
+    <link rel="stylesheet" type="text/css" href="../bootstrap/css/bootstrap.min.css">
+    <style>
+        .control-button-group {
+            max-height: 40px;
+            display: inline-block;
+            background-color: #FFF;
+            border-radius: 3px;
+            padding-top: 3px;
+            padding-left: 5px;
+        }
+
+        .control-button-group > button {
+            font-size: 16px;
+            padding: 6px 9px;
+            max-height: 40px;
+            max-width: 40px;
+            margin-left: 5px;
+        }
+
+        #stop {
+            color: #DB4B4E;
+        }
+
+        #pause {
+            color: #3C3D4F;
+            padding: 6px 8px 6px 10px;
+        }
+
+        #resume {
+            color: #DB4B4E;
+            padding: 6px 8px 6px 10px;
+        }
+
+    </style>
+</head>
+<body>
+<div class="control-button-group">
+    <button id="stop" class="btn btn-default" title="停止录制">
+        <i class="glyphicon glyphicon-stop"></i>
+    </button>
+
+    <button id="pause" class="btn btn-default" title="暂停录制">
+        <i class="glyphicon glyphicon-pause"></i>
+    </button>
+
+    <button id="resume" class="btn btn-default" title="恢复录制">
+        <i class="glyphicon glyphicon-play"></i>
+    </button>
+</div>
+<script src="../common/browser-polyfill.js"></script>
+<script src="../jquery/jquery-3.4.1.min.js"></script>
+<script src="../js/transaction-ui-controls.js"></script>
+</body>
+</html>

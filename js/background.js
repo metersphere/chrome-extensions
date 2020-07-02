@@ -1,103 +1,184 @@
-var recordData = [];
-var useragent = null;
-var activeTabId = 0;
-var body = {};
-var json = null;
+const WEB_EXTENSIONS_LIBRARY = ["atom", "json", "map", "topojson", "jsonld", "rss", "geojson", "rdf", "xml", "js", "webmanifest", "webapp", "appcache", "mid", "midi", "kar", "aac", "f4a", "f4b", "m4a", "mp3", "oga", "ogg", "opus", "ra", "wav", "bmp", "gif", "jpeg", "jpg", "jxr", "hdp", "wdp", "png", "svg", "svgz", "tif", "tiff", "wbmp", "webp", "jng", "3gp", "3gpp", "f4p", "f4v", "m4v", "mp4", "mpeg", "mpg", "ogv", "mov", "webm", "flv", "mng", "asf", "asx", "wmv", "avi", "cur", "ico", "doc", "xls", "ppt", "docx", "xlsx", "pptx", "deb", "woff", "woff2", "eot", "ttc", "ttf", "otf", "ear", "jar", "war", "hqx", "bin", "deb", "dll", "dmg", "img", "iso", "msi", "msm", "msp", "safariextz", "pdf", "ai", "eps", "ps", "rtf", "kml", "kmz", "wmlc", "7z", "bbaw", "torrent", "crx", "cco", "jardiff", "jnlp", "run", "iso", "oex", "pl", "pm", "pdb", "prc", "rar", "rpm", "sea", "swf", "sit", "tcl", "tk", "crt", "der", "pem", "xpi", "exe", "xhtml", "xsl", "zip", "css", "csv", "htm", "html", "shtml", "md", "mml", "txt", "vcard", "vcf", "xloc", "jad", "wml", "vtt", "htc", "desktop", "md", "ts", "ico", "jar", "so"];
 
-var options = {};
-var cache = false;
-var cookie = false;
-var op = null;
-
-
-function pauseRecording() {
-    chrome.storage.local.set({op: "pause"});
+class Transaction {
+    constructor(id, name, counter) {
+        this.id = id;
+        this.name = name;
+        this.counter = counter;
+    }
 }
 
-function resumeRecording() {
-    chrome.storage.local.set({op: "running"});
+class Transactions {
+    constructor() {
+        this.httpTransactions = [];
+    }
+
+    addHttpTransaction(name) {
+        let id = this.httpTransactions.length;
+        let httpTransaction = new Transaction(id, name, 0);
+        this.httpTransactions.push(httpTransaction);
+        return httpTransaction;
+    }
+
+    setHttpTransactionName(index, name) {
+        this.httpTransactions[index].name = name;
+    }
+
+    getLastHttpTransactionCounter() {
+        return this.getLastHttpTransaction().counter;
+    }
+
+    addLastHttpTransactionCounter() {
+        this.getLastHttpTransaction().counter++;
+    }
+
+    getLastHttpTransaction() {
+        let last = this.httpTransactions.length > 0 ? this.httpTransactions.length - 1 : 0;
+        return this.httpTransactions[last];
+    }
+
+    reset() {
+        this.httpTransactions = [];
+    }
 }
 
-function stopRecording() {
-    chrome.webRequest.onBeforeRequest.removeListener(onBeforeRequest);
-    chrome.webRequest.onSendHeaders.removeListener(onSendHeaders);
-    chrome.webRequest.onBeforeSendHeaders.removeListener(onBeforeSendHeaders);
-    chrome.storage.local.set({isRecording: false});
-    chrome.storage.local.set({op: "stop"});
-}
+// 全局transactions
+var transactions = new Transactions;
 
-function startRecording() {
-    body = {};
-    recordData = [];
-    chrome.storage.local.set({"recordData": recordData}, function () {
+class Recorder {
+    constructor() {
+        this.status = "stopped";
+        this.body = {};
+        this.traffic = {};
+        this.activeTabId = 0;
+    }
 
-        chrome.storage.local.get('options', function (items) {
-            options = items.options;
-            const RecordAjax = options.record_ajax;
-            const RecordCss = options.record_css;
-            const RecordJs = options.record_js;
-            const RecordImages = options.record_images;
-            const RecordOther = options.record_other;
-            cache = options.cache;
-            cookie = options.cookie;
+    isRecording() {
+        return this.status === "recording";
+    }
 
-            if (items.options.useragent) {
-                useragent = items.options.useragent;
+    changeStatus(status) {
+        this.status = status;
+    }
+
+    convertTraffic(sourceTraffic) {
+        let traffic = {};
+        transactions.httpTransactions.forEach(transaction => {
+            let key = transaction.name + " [" + transaction.id + "]";
+            traffic[key] = {};
+            let keys = Object.keys(sourceTraffic);
+            keys.forEach(index => {
+                let item = sourceTraffic[index];
+                if (item.transaction_key === transaction.id) {
+                    let requestId = item.method + ' ' + item.url.substring(0, 130) + ' [' + item.requestId + ']';
+                    delete item.requestId;
+                    delete item.tabId;
+                    traffic[key][requestId] = item;
+                }
+            });
+        })
+
+        return traffic;
+    }
+
+    saveRecording() {
+        let traffic = this.convertTraffic(this.traffic);
+        // 转为字符，为了保持顺序。
+        chrome.storage.local.set({"traffic": JSON.stringify(traffic)});
+    }
+
+    resetRecording() {
+        this.status = "stopped";
+        this.body = {};
+        this.traffic = {};
+        this.activeTabId = 0;
+        transactions.reset();
+        transactions.addHttpTransaction("测试用例");
+        chrome.storage.local.set({"traffic": ''});
+    }
+
+    pauseRecording() {
+        this.changeStatus('pause');
+    }
+
+    resumeRecording() {
+        this.changeStatus('recording');
+    }
+
+    stopRecording() {
+        this.changeStatus('stopped');
+        chrome.webRequest.onBeforeRequest.removeListener(onBeforeRequest);
+        chrome.webRequest.onSendHeaders.removeListener(onSendHeaders);
+        chrome.webRequest.onBeforeSendHeaders.removeListener(onBeforeSendHeaders);
+        chrome.tabs.query({}, function (tabs) {
+            for (let i = 0; i < tabs.length; i++) {
+                chrome.tabs.sendMessage(tabs[i].id, {
+                        command: 'remove_transaction_ui'
+                    }
+                );
             }
-            var RequestFilter = {};
-            var MatchPatterns;
+        });
+        this.saveRecording();
+    }
+
+    startRecording(tab) {
+        this.resetRecording();
+        this.changeStatus('recording');
+
+        chrome.storage.local.get('options', function (item) {
+            let options = item.options;
+            let requestFilter = {};
+            let matchPatterns;
             if (!options.regex_include) {
-                MatchPatterns = ['http://*/*', 'https://*/*'];
+                matchPatterns = ['http://*/*', 'https://*/*'];
             } else {
-                MatchPatterns = options.regex_include.split(',').map(function (item) {
+                matchPatterns = options.regex_include.split(',').map(function (item) {
                     return item.trim();
                 });
             }
+            requestFilter.urls = matchPatterns;
+            requestFilter.types = ['main_frame', 'sub_frame', 'object'];
+            if (options.record_ajax !== false) {
+                requestFilter.types.push('xmlhttprequest');
+            }
+            if (options.record_css !== false) {
+                requestFilter.types.push('stylesheet');
+                requestFilter.types.push('font');
+            }
+            if (options.record_js !== false) {
+                requestFilter.types.push('script');
+            }
+            if (options.record_images !== false) {
+                requestFilter.types.push('image');
+            }
+            if (options.record_other !== false) {
+                requestFilter.types.push('other');
+                requestFilter.types.push('ping');
+            }
 
-            RequestFilter.urls = MatchPatterns;
-            RequestFilter.types = ['main_frame', 'sub_frame', 'object'];
-            if (RecordAjax != false) {
-                RequestFilter.types.push('xmlhttprequest');
-            }
-            if (RecordCss != false) {
-                RequestFilter.types.push('stylesheet');
-                RequestFilter.types.push('font');
-            }
-            if (RecordJs != false) {
-                RequestFilter.types.push('script');
-            }
-            if (RecordImages != false) {
-                RequestFilter.types.push('image');
-            }
-            if (RecordOther != false) {
-                RequestFilter.types.push('other');
-                RequestFilter.types.push('ping');
-            }
+            chrome.webRequest.onBeforeSendHeaders.addListener(onBeforeSendHeaders, requestFilter, ['blocking', 'requestHeaders']);
+            chrome.webRequest.onBeforeRequest.addListener(onBeforeRequest, requestFilter, ['requestBody']);
+            chrome.webRequest.onSendHeaders.addListener(onSendHeaders, requestFilter, ['requestHeaders']);
 
-            // listeners
-            chrome.webRequest.onBeforeSendHeaders.addListener(onBeforeSendHeaders, RequestFilter, [
-                'blocking', 'requestHeaders']);
-            chrome.webRequest.onBeforeRequest.addListener(onBeforeRequest, RequestFilter,
-                ['requestBody']);
-            // We use onSendHeaders to collect send headers
-            chrome.webRequest.onSendHeaders.addListener(onSendHeaders, RequestFilter,
-                ['requestHeaders']);
-            delete (RequestFilter.types);
+            delete (requestFilter.types);
         });
-        chrome.storage.local.set({op: "running"});
 
-        chrome.storage.local.set({isRecording: true});
-    });
+        chrome.tabs.sendMessage(tab.id, {command: "add_transaction_ui"});
+    }
 }
 
-function onBeforeSendHeaders(info) {
-    chrome.storage.local.get(null, function (item) {
-        if (item.op === 'running') {
+// 全局recorder
+var recorder = new Recorder();
+
+let onBeforeSendHeaders = function (info) {
+    if (recorder.isRecording()) {
+        chrome.storage.local.get("options", function (item) {
+            let options = item.options;
             if (info.requestHeaders) {
-                if (useragent && useragent != 'Current Browser') {
-                    var headers = info.requestHeaders;
+                if (options.useragent && options.useragent !== 'Current Browser') {
+                    let headers = info.requestHeaders;
                     headers.forEach(function (header) {
-                        if (header.name.toLowerCase() == 'user-agent') {
+                        if (header.name.toLowerCase() === 'user-agent') {
                             header.value = useragent;
                         }
                     });
@@ -110,71 +191,54 @@ function onBeforeSendHeaders(info) {
                     requestHeaders: []
                 };
             }
-        }
-    });
+        });
+    }
 }
 
-
-function onBeforeRequest(info) {
-    chrome.storage.local.get(null, function (item) {
-        if (item.op === 'running') {
-            if (info.requestBody) {
-                var postData = '';
-                if (!info.requestBody.error) {
-                    if (info.requestBody.formData) {
-                        // If the request method is POST and the body is a sequence of key-value
-                        // pairs encoded in UTF8,
-                        // encoded as either multipart/form-data, or
-                        // application/x-www-form-urlencoded
-                        postData = info.requestBody.formData;
-                        // switch array to string
-                        for (var index in postData) {
+let onBeforeRequest = function (info) {
+    if (recorder.isRecording()) {
+        if (info.requestBody) {
+            let postData = '';
+            if (!info.requestBody.error) {
+                if (info.requestBody.formData) {
+                    postData = info.requestBody.formData;
+                    for (let index in postData) {
+                        if (postData.hasOwnProperty(index)) {
                             postData[index] = postData[index].toString();
                         }
-                    } else {
-                        // If the request method is PUT or POST, and the body is not already
-                        // parsed in formData, then the
-                        // unparsed request body elements are contained in this array.
-                        postData = [];
-                        if (info.requestBody.raw) {
-                            info.requestBody.raw.forEach(function (raw) {
-                                if (raw.bytes) {
-                                    var bodyString = '';
-                                    const bytes = new Uint8Array(raw.bytes);
-                                    const bodyLength = bytes.length;
-                                    for (var i = 0; i < bodyLength; i++) {
-                                        bodyString += String.fromCharCode(bytes[i]);
-                                    }
-                                    postData.push(bodyString);
-                                } else {
-                                    // @todo:support for file uploads
+                    }
+                } else {
+                    postData = [];
+                    if (info.requestBody.raw) {
+                        info.requestBody.raw.forEach(function (raw) {
+                            if (raw.bytes) {
+                                let bodyString = '';
+                                const bytes = new Uint8Array(raw.bytes);
+                                const bodyLength = bytes.length;
+                                for (let i = 0; i < bodyLength; i++) {
+                                    bodyString += String.fromCharCode(bytes[i]);
                                 }
-                            });
-                        }
-                        // Encoding and Parsing Request Query String to key => value
-                        var dataString = '';
-                        for (var i = 0; i < postData.length; i++) {
-                            dataString += (postData[i]);
-                        }
-                        // Check if data is correct JSON string
-                        try {
-                            var jsonParsedString = JSON.parse(dataString);
-                        } catch (e) {
-
-                        }
-                        // If data is not correct JSON string parse it on key => value parameters
+                                postData.push(bodyString);
+                            } else {
+                                // @todo:support for file uploads
+                            }
+                        });
+                    }
+                    let dataString = '';
+                    for (let i = 0; i < postData.length; i++) {
+                        dataString += (postData[i]);
+                    }
+                    try {
+                        let jsonParsedString = JSON.parse(dataString);
                         if (!jsonParsedString) {
-                            // Parsing Request Query String to key => value using URI.js library
-                            // http://medialize.github.io/URI.js/docs.html#static-parseQuery
-                            var parsedValue = URI.parseQuery(dataString);
+                            let parsedValue = URI.parseQuery(dataString);
                             if (!$.isEmptyObject(parsedValue)) {
-                                // If query have not parsed not save it
-                                var notParseFlag = false;
+                                let notParseFlag = false;
                                 for (const prop in parsedValue) {
-                                    // if query not parsed URI.parseQuery method returns
-                                    // it like object with one property with null value
-                                    if (prop === dataString && parsedValue[prop] === null) {
-                                        notParseFlag = true;
+                                    if (parsedValue.hasOwnProperty(prop)) {
+                                        if (prop === dataString && parsedValue[prop] === null) {
+                                            notParseFlag = true;
+                                        }
                                     }
                                 }
                                 if (!notParseFlag) {
@@ -182,155 +246,188 @@ function onBeforeRequest(info) {
                                 }
                             }
                         }
-                    }
-                } else {
-                    if (info.requestBody.error !== "Unknown error.") {
-                        // console.log(chrome.runtime.lastError);
-                        googleAnalytics('send', 'exception', {
-                            'exDescription': 'onBeforeRequest():' + chrome.runtime.lastError.message,
-                            'exFatal': false
-                        });
+                    } catch (e) {
+
                     }
                 }
-                var key = info.method + info.requestId;
-                body[key] = postData;
+            } else {
+                if (info.requestBody.error !== "Unknown error.") {
+                    console.log(chrome.runtime.lastError.message);
+                }
             }
+            let key = info.method + info.requestId;
+            recorder.body[key] = postData;
         }
-    });
+    }
 }
 
-
-function onSendHeaders(info) {
-    chrome.storage.local.get(null, function (items) {
-        if (items.op === 'running') {
+let onSendHeaders = function (info) {
+    if (recorder.isRecording()) {
+        chrome.storage.local.get(["options"], function (item) {
+            let options = item.options;
             chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
                 if (tabs.length > 0) {
                     if (tabs[0].hasOwnProperty('id')) {
-                        activeTabId = tabs[0].id;
+                        recorder.activeTabId = tabs[0].id;
                     }
                 }
-                if (info.tabId == activeTabId) {
-                    if (info.url == 'https://fonts.googleapis.com/css?family=Open+Sans:400,600,700&blazemeter-chrome-extension=true') {
-                        //This exact url is used by Transaction Popup, ignore it
-                        return;
-                    }
-
-                    for (var headers_index in info.requestHeaders) {
-                        if (info.requestHeaders[headers_index].name == 'Origin') {
-                            //If Origin is chrome-extension:// then ignore this request
-                            if (info.requestHeaders[headers_index].value.startsWith('chrome-extension://')) {
-                                return;
+                if (info.tabId === recorder.activeTabId) {
+                    for (let headers_index in info.requestHeaders) {
+                        if (info.requestHeaders.hasOwnProperty(headers_index)) {
+                            if (info.requestHeaders[headers_index].name === 'Origin') {
+                                if (info.requestHeaders[headers_index].value.startsWith('chrome-extension://')) {
+                                    return;
+                                }
                             }
                         }
                     }
 
-                    var key = info.method + info.requestId;
-                    data = {};
-                    var requestype = 'embedded';
-                    var request_subtype = ''; //Only for AJAX requests
-                    if (info.type == 'main_frame') {
-                        requestype = 'top_level';
-                    } else if (info.type == 'xmlhttprequest') {
-                        requestype = 'ajax';
-                        //@todo: filter out by parentFrameId? If its not -1 then its coming from iframe.
-                        for (var headers_index in info.requestHeaders) {
-                            if (info.requestHeaders[headers_index].name == 'Origin' ||
-                                info.requestHeaders[headers_index].name == 'Referer') {
-                                //@todo: since Origin header is mostly used in CORS mark any requests with Origin as embedded?
-                                var origin_host = (new URL(info.requestHeaders[headers_index].value)).hostname;
-                                if (isFromRoot(origin_host, info.url)) {
-
-                                    if (url_is_filepath(info.url)) {
-                                        //AJAX request is embedded file resource (JS, CSS, etc...)
-                                        request_subtype = 'embedded_resource';
+                    let data = {};
+                    let requestType = 'embedded';
+                    let requestSubType = '';
+                    if (info.type === 'main_frame') {
+                        requestType = 'top_level';
+                    } else if (info.type === 'xmlhttprequest') {
+                        requestType = 'ajax';
+                        for (let index in info.requestHeaders) {
+                            if (info.requestHeaders.hasOwnProperty(index)) {
+                                if (info.requestHeaders[index].name === 'Origin' || info.requestHeaders[index].name === 'Referer') {
+                                    let origin_host = (new URL(info.requestHeaders[index].value)).hostname;
+                                    if (isFromRoot(origin_host, info.url)) {
+                                        if (isFilepath(info.url)) {
+                                            requestSubType = 'embedded_resource';
+                                        } else {
+                                            requestSubType = 'top_level';
+                                        }
                                     } else {
-                                        //AJAX request is issued by an action from a user (eg: click, scrolling)
-                                        request_subtype = 'top_level';
-                                    }
-                                } else {
-                                    //AJAX request from 3rd party domain, mostly issued due to a JS (eg: analytics, tracking, ads)
-                                    request_subtype = 'embedded_external';
+                                        requestSubType = 'embedded_external';
 
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    let key = info.method + info.requestId;
+                    data.url = data.label = info.url;
+                    data.method = info.method;
+                    if (recorder.body[key]) {
+                        data.body = recorder.body[key];
+                    }
+                    data.requestId = info.requestId;
+                    data.request_type = requestType;
+                    data.request_subtype = requestSubType;
+                    data.timestamp = Math.round(info.timeStamp);
+                    data.tabId = info.tabId;
+                    data.headers = info.requestHeaders;
+
+                    for (let index in data.headers) {
+                        if (data.headers.hasOwnProperty(index)) {
+                            if (data.headers[index].name === 'Cookie') {
+                                if (!options.cookie) {
+                                    data.headers.splice(index, 1);
+                                } else {
+                                    data.cookies = data.headers[index].value.split('; ');
                                 }
                                 break;
                             }
                         }
                     }
 
-                    data.url = data.label = info.url;
-                    data.method = info.method;
-                    if (body[key]) {
-                        data.body = body[key];
-                    }
-                    data.requestId = info.requestId;
-                    data.request_type = requestype;
-                    data.request_subtype = request_subtype;
-                    data.timestamp = Math.round(info.timeStamp); // in ns??
-                    data.tabId = info.tabId;
-                    data.headers = info.requestHeaders;
+                    data.transaction_key = transactions.getLastHttpTransaction().id;
 
-                    for (var index in data.headers) {
-                        if (data.headers[index].name == 'Cookie') {
-                            if (!cookie) {
-                                // Don't record cookies
-                                data.headers.splice(index, 1);
-                            } else {
-                                // Store cookie in the
-                                var CookieArray = data.headers[index].value.split('; ');
-                                data.cookies = CookieArray;
-                            }
-                            break;
-                        }
+                    if (!recorder.traffic[key]) {
+                        recorder.traffic[key] = data;
+                        transactions.addLastHttpTransactionCounter();
+                        chrome.runtime.sendMessage({command: 'update_transactions'});
                     }
-
-                    recordData.push(data);
-                    chrome.storage.local.set({
-                        "recordData": recordData
-                    });
                 }
             });
-        }
-
-    });
+        });
+    }
 }
 
-
-function isFromRoot(rootDomain, testURL) {
+let isFromRoot = function (rootDomain, testURL) {
     if (typeof (testURL) === 'undefined') {
         return false;
     }
-    var getDomainUrl = (new URL(testURL)).hostname;
+    let getDomainUrl = (new URL(testURL)).hostname;
     if (getDomainUrl === rootDomain) {
         return true;
     }
 
-    var pattern = '([\\.]+' + rootDomain + ')(?![0-9a-zA-Z\\-\\.])';
-    var expression = new RegExp(pattern, 'gi');
+    let pattern = '([\\.]+' + rootDomain + ')(?![0-9a-zA-Z\\-\\.])';
+    let expression = new RegExp(pattern, 'gi');
     return expression.test(getDomainUrl);
 }
 
-
-function url_is_filepath(url) {
-    var filetype = get_url_extension(url);
-    if (filetype) {
-        var web_extensions = web_extensions_library();
-        if ($.inArray(filetype, web_extensions) !== -1) {
+let isFilepath = function (url) {
+    let fileType = getUrlExtension(url);
+    if (fileType) {
+        if ($.inArray(fileType, WEB_EXTENSIONS_LIBRARY) !== -1) {
             return true;
         }
     }
     return false;
 }
 
-function web_extensions_library() {
-    //Source: https://github.com/AdelMahjoub/mime-type-nodejs/blob/master/mime-to-ext.json
-    return ["atom", "json", "map", "topojson", "jsonld", "rss", "geojson", "rdf", "xml", "js", "webmanifest", "webapp", "appcache", "mid", "midi", "kar", "aac", "f4a", "f4b", "m4a", "mp3", "oga", "ogg", "opus", "ra", "wav", "bmp", "gif", "jpeg", "jpg", "jxr", "hdp", "wdp", "png", "svg", "svgz", "tif", "tiff", "wbmp", "webp", "jng", "3gp", "3gpp", "f4p", "f4v", "m4v", "mp4", "mpeg", "mpg", "ogv", "mov", "webm", "flv", "mng", "asf", "asx", "wmv", "avi", "cur", "ico", "doc", "xls", "ppt", "docx", "xlsx", "pptx", "deb", "woff", "woff2", "eot", "ttc", "ttf", "otf", "ear", "jar", "war", "hqx", "bin", "deb", "dll", "dmg", "img", "iso", "msi", "msm", "msp", "safariextz", "pdf", "ai", "eps", "ps", "rtf", "kml", "kmz", "wmlc", "7z", "bbaw", "torrent", "crx", "cco", "jardiff", "jnlp", "run", "iso", "oex", "pl", "pm", "pdb", "prc", "rar", "rpm", "sea", "swf", "sit", "tcl", "tk", "crt", "der", "pem", "xpi", "exe", "xhtml", "xsl", "zip", "css", "csv", "htm", "html", "shtml", "md", "mml", "txt", "vcard", "vcf", "xloc", "jad", "wml", "vtt", "htc", "desktop", "md", "ts", "ico", "jar", "so"];
-}
-
-function get_url_extension(url) {
-    var file_extension = url.split(/\#|\?/)[0].split('.').pop().trim();
-    if (/^[a-zA-Z0-9]*$/.test(file_extension) == true) {
+let getUrlExtension = function (url) {
+    let file_extension = url.split(/[#?]/)[0].split('.').pop().trim();
+    if (/^[a-zA-Z0-9]*$/.test(file_extension) === true) {
         return file_extension;
     }
 
     return null;
 }
+
+let messageHandler = function (request, sender, sendResponse) {
+    if (request.command) {
+        switch (request.command) {
+            case 'start_recording':
+                recorder.startRecording(request.recordingTab);
+                sendResponse({
+                    msg: 'ok',
+                    error: false
+                });
+                break;
+            case 'stop_recording':
+                recorder.stopRecording();
+                sendResponse({
+                    msg: 'ok',
+                    error: false
+                });
+                break;
+            case 'pause_recording':
+                recorder.pauseRecording();
+                sendResponse({
+                    msg: 'ok',
+                    error: false
+                });
+                break;
+            case 'resume_recording':
+                recorder.resumeRecording();
+                sendResponse({
+                    msg: 'ok',
+                    error: false
+                });
+                break;
+            case 'save_recording':
+                recorder.saveRecording();
+                sendResponse({
+                    msg: 'ok',
+                    error: false
+                });
+                break;
+            case 'check_status':
+                sendResponse({
+                    status: recorder.status,
+                    msg: 'ok',
+                    error: false
+                });
+                break;
+        }
+    }
+}
+
+chrome.runtime.onMessage.addListener(messageHandler);

@@ -33,7 +33,7 @@ class Element {
     }
 
     commonValue(tag, name, value, defaultValue) {
-        let v = this.getDefault(value, defaultValue)
+        let v = this.getDefault(value, defaultValue);
         return this.add(new Element(tag, {name: name}, v));
     }
 
@@ -73,6 +73,11 @@ class Element {
         return this.isEmptyValue() && this.isEmptyElement();
     }
 
+    replace(str) {
+        if (!str || !(typeof str === 'string')) return str;
+        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+    }
+
     toXML(indent) {
         if (indent) {
             this.indent = indent;
@@ -85,10 +90,10 @@ class Element {
     }
 
     start() {
-        let str = this.indent + '<' + this.name;
+        let str = this.indent + '<' + this.replace(this.name);
         for (let key in this.attributes) {
             if (this.attributes.hasOwnProperty(key)) {
-                str += ' ' + key + '="' + this.attributes[key] + '"';
+                str += ' ' + this.replace(key) + '="' + this.replace(this.attributes[key]) + '"';
             }
         }
         if (this.isEmpty()) {
@@ -101,7 +106,7 @@ class Element {
 
     content() {
         if (!this.isEmptyValue()) {
-            return this.value;
+            return this.replace(this.value);
         }
 
         let str = '';
@@ -120,7 +125,7 @@ class Element {
         if (this.isEmpty()) {
             return '\n';
         }
-        let str = '</' + this.name + '>\n';
+        let str = '</' + this.replace(this.name) + '>\n';
         if (!this.isEmptyValue()) {
             return str;
         }
@@ -215,6 +220,16 @@ class ThreadGroup extends DefaultTestElement {
     }
 }
 
+class TransactionController extends DefaultTestElement {
+    constructor(testName, props) {
+        super('TransactionController', 'TransactionControllerGui', 'TransactionController', testName);
+
+        props = props || {};
+        this.boolProp("TransactionController.includeTimers", props.includeTimers, false);
+        this.boolProp("TransactionController.parent", props.parent, true);
+    }
+}
+
 class HTTPSamplerProxy extends DefaultTestElement {
     constructor(testName, request) {
         super('HTTPSamplerProxy', 'HttpTestSampleGui', 'HTTPSamplerProxy', testName);
@@ -224,6 +239,7 @@ class HTTPSamplerProxy extends DefaultTestElement {
         this.stringProp("HTTPSampler.protocol", this.request.protocol.split(":")[0]);
         this.stringProp("HTTPSampler.path", this.request.pathname);
         this.stringProp("HTTPSampler.method", this.request.method);
+        this.stringProp("HTTPSampler.contentEncoding", this.request.encoding, "UTF-8");
         if (!this.request.port) {
             this.stringProp("HTTPSampler.port", "");
         } else {
@@ -231,6 +247,7 @@ class HTTPSamplerProxy extends DefaultTestElement {
         }
 
         this.boolProp("HTTPSampler.follow_redirects", this.request.follow, true);
+        this.boolProp("HTTPSampler.use_keepalive", this.request.keepalive, true);
     }
 }
 
@@ -258,6 +275,66 @@ class HTTPSamplerArguments extends Element {
             elementProp.stringProp('Argument.value', arg.value);
             elementProp.stringProp('Argument.metadata', arg.metadata || "=");
         });
+    }
+}
+
+class DurationAssertion extends DefaultTestElement {
+    constructor(testName, duration) {
+        super('DurationAssertion', 'DurationAssertionGui', 'DurationAssertion', testName);
+        this.duration = duration || 0;
+        this.stringProp('DurationAssertion.duration', this.duration);
+    }
+}
+
+class ResponseAssertion extends DefaultTestElement {
+    constructor(testName, assertion) {
+        super('ResponseAssertion', 'AssertionGui', 'ResponseAssertion', testName);
+        this.assertion = assertion || {};
+
+        this.stringProp('Assertion.test_field', this.assertion.field);
+        this.boolProp('Assertion.assume_success', false);
+        this.intProp('Assertion.test_type', this.assertion.type);
+        this.stringProp('Assertion.custom_message', this.assertion.message);
+
+        let collectionProp = this.collectionProp('Asserion.test_strings');
+        let random = Math.floor(Math.random() * 10000);
+        collectionProp.stringProp(random, this.assertion.value);
+    }
+}
+
+class ResponseCodeAssertion extends ResponseAssertion {
+    constructor(testName, type, value, message) {
+        let assertion = {
+            field: 'Assertion.response_code',
+            type: type,
+            value: value,
+            message: message,
+        }
+        super(testName, assertion)
+    }
+}
+
+class ResponseDataAssertion extends ResponseAssertion {
+    constructor(testName, type, value, message) {
+        let assertion = {
+            field: 'Assertion.response_data',
+            type: type,
+            value: value,
+            message: message,
+        }
+        super(testName, assertion)
+    }
+}
+
+class ResponseHeadersAssertion extends ResponseAssertion {
+    constructor(testName, type, value, message) {
+        let assertion = {
+            field: 'Assertion.response_headers',
+            type: type,
+            value: value,
+            message: message,
+        }
+        super(testName, assertion)
     }
 }
 
@@ -393,6 +470,42 @@ class ElementArguments extends Element {
     }
 }
 
+class RegexExtractor extends DefaultTestElement {
+    constructor(testName, props) {
+        super('RegexExtractor', 'RegexExtractorGui', 'RegexExtractor', testName);
+        this.props = props || {}
+        this.stringProp('RegexExtractor.useHeaders', props.headers);
+        this.stringProp('RegexExtractor.refname', props.name);
+        this.stringProp('RegexExtractor.regex', props.expression);
+        this.stringProp('RegexExtractor.template', props.template);
+        this.stringProp('RegexExtractor.default', props.default);
+        this.stringProp('RegexExtractor.match_number', props.match);
+    }
+}
+
+class JSONPostProcessor extends DefaultTestElement {
+    constructor(testName, props) {
+        super('JSONPostProcessor', 'JSONPostProcessorGui', 'JSONPostProcessor', testName);
+        this.props = props || {}
+        this.stringProp('JSONPostProcessor.referenceNames', props.name);
+        this.stringProp('JSONPostProcessor.jsonPathExprs', props.expression);
+        this.stringProp('JSONPostProcessor.match_numbers', props.match);
+    }
+}
+
+class XPath2Extractor extends DefaultTestElement {
+    constructor(testName, props) {
+        super('XPath2Extractor', 'XPath2ExtractorGui', 'XPath2Extractor', testName);
+        this.props = props || {}
+        this.stringProp('XPathExtractor2.default', props.default);
+        this.stringProp('XPathExtractor2.refname', props.name);
+        this.stringProp('XPathExtractor2.xpathQuery', props.expression);
+        this.stringProp('XPathExtractor2.namespaces', props.namespaces);
+        this.stringProp('XPathExtractor2.matchNumber', props.match);
+    }
+}
+
+
 class JMXRequest {
     constructor(item, domains) {
         let url = new URL(item.url);
@@ -448,7 +561,7 @@ class JMXGenerator {
         testPlan.put(this.getCacheManager());
 
         let threadGroup = new ThreadGroup("Thread Group");
-        this.getRequestSamplers().forEach(sampler => {
+        this.getTransactionController().forEach(sampler => {
             threadGroup.put(sampler);
         })
         testPlan.put(threadGroup);
@@ -486,36 +599,62 @@ class JMXGenerator {
         return new CacheManager('HTTP Cache Manager');
     }
 
-    getRequestSamplers() {
-        let self = this;
-        let samplers = [];
-        this.data.forEach(function (item) {
-            let url = new URL(item.url);
-            if (self.domains[url.hostname]) {
-                let name = self.replace(item.label);
-                let request = new JMXRequest(item, self.domains);
-                let httpSamplerProxy = new HTTPSamplerProxy(name || "", request);
-                httpSamplerProxy.put(new HeaderManager(name + " Headers", item.headers));
-
-                if (item.method.toUpperCase() === 'GET') {
-                    httpSamplerProxy.add(new HTTPSamplerArguments(request.parameters));
+    getTransactionController() {
+        let result = [];
+        if (this.data.length > 1) {
+            this.data.forEach(item => {
+                if (item.hasOwnProperty("url")) {
+                    result.push(this.getRequestSampler(item));
                 } else {
-                    let args = [];
-                    // raw
-                    if (item.body instanceof Array) {
-                        httpSamplerProxy.boolProp('HTTPSampler.postBodyRaw', true);
-                        args.push({name: '', value: item.body[0], encode: false});
-                    } else {
-                        // form-data, x-www-form-urlencoded
-                        for (let key in item.body) {
-                            if (item.body.hasOwnProperty(key)) {
-                                args.push({name: key, value: item.body[key], encode: false});
-                            }
+                    let tc = new TransactionController(item.name);
+                    this.getRequestSamplers(item.request).forEach(request => {
+                        tc.put(request);
+                    });
+                    result.push(tc);
+                }
+            });
+        } else {
+            return this.getRequestSamplers(this.data);
+        }
+        return result;
+    }
+
+    getRequestSampler(item) {
+        let url = new URL(item.url);
+        if (this.domains[url.hostname]) {
+            let name = item.label;
+            let request = new JMXRequest(item, this.domains);
+            let httpSamplerProxy = new HTTPSamplerProxy(name || "", request);
+            httpSamplerProxy.put(new HeaderManager(name + " Headers", item.headers));
+
+            if (item.method.toUpperCase() === 'GET') {
+                httpSamplerProxy.add(new HTTPSamplerArguments(request.parameters));
+            } else {
+                let args = [];
+                // raw
+                if (item.body instanceof Array) {
+                    httpSamplerProxy.boolProp('HTTPSampler.postBodyRaw', true);
+                    args.push({name: '', value: item.body[0], encode: false});
+                } else {
+                    // form-data, x-www-form-urlencoded
+                    for (let key in item.body) {
+                        if (item.body.hasOwnProperty(key)) {
+                            args.push({name: key, value: item.body[key], encode: false});
                         }
                     }
-                    httpSamplerProxy.add(new HTTPSamplerArguments(args));
                 }
-                samplers.push(httpSamplerProxy);
+                httpSamplerProxy.add(new HTTPSamplerArguments(args));
+            }
+            return httpSamplerProxy;
+        }
+    }
+
+    getRequestSamplers(data) {
+        let samplers = [];
+        data.forEach(item => {
+            let sampler = this.getRequestSampler(item);
+            if (sampler) {
+                samplers.push(sampler);
             }
         });
         return samplers;
@@ -529,5 +668,61 @@ class JMXGenerator {
         let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
         xml += this.jmeterTestPlan.toXML();
         return xml;
+    }
+}
+
+class DownloadRecording {
+    getDomains(object) {
+        let domains = [];
+        if (object.hasOwnProperty("url")) {
+            try {
+                let url = new URL(object.url);
+                if (!domains.includes(url.hostname)) {
+                    domains.push(url.hostname);
+                }
+            } catch (e) {
+                alert("url格式错误: " + object.url)
+            }
+        } else {
+            let keys = Object.keys(object);
+            keys.forEach(key => {
+                this.getDomains(object[key]).forEach(domain => {
+                    if (!domains.includes(domain)) {
+                        domains.push(domain);
+                    }
+                })
+            })
+        }
+        return domains;
+    }
+
+    convertTransactions(transactions) {
+        let result = [];
+        let keys = Object.keys(transactions);
+        keys.forEach(key => {
+            if (!transactions[key].hasOwnProperty("url")) {
+                let name = key.split(" [")[0];
+                let request = [];
+                let traffic = Object.keys(transactions[key]);
+                traffic.forEach(index => {
+                    request.push(transactions[key][index]);
+                })
+                result.push({name: name, request: request});
+            } else {
+                result.push(transactions[key]);
+            }
+        });
+        return result;
+    }
+
+    downloadJMX(name, domains, transactions) {
+        let data = this.convertTransactions(transactions);
+        let jmx = new JMXGenerator(data, name, domains);
+        let blob = new Blob([jmx.toXML()], {type: "application/octet-stream"});
+        let link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = name + ".jmx";
+        link.click();
+        window.URL.revokeObjectURL(link.href);
     }
 }
