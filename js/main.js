@@ -139,24 +139,13 @@ function switchBtn(status) {
             hideBtns('record_stop', 'record_pause', 'record_resume');
             showBtn('record_start');
             chrome.storage.local.get('traffic', function (item) {
-                if (item.traffic.length > 0) {
+                if (item.traffic && item.traffic.length > 0) {
                     showBtns('record_download', 'record_edit');
                 } else {
                     hideBtns('record_download', 'record_edit');
                 }
             });
             break;
-        default: // 同stopped
-            hideBtns('record_stop', 'record_pause', 'record_resume');
-            showBtn('record_start');
-            chrome.storage.local.get('traffic', function (item) {
-                if (item.traffic.length > 0) {
-                    showBtns('record_download', 'record_edit');
-                } else {
-                    hideBtns('record_download', 'record_edit');
-                }
-            });
-
     }
 }
 
