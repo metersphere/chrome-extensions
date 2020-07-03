@@ -59,6 +59,7 @@ $(document).ready(function () {
         if (!stringIsEmpty(transactionName)) {
             $(this).prev().text(transactionName);
             transactions.setHttpTransactionName(key, transactionName);
+            chrome.runtime.sendMessage({action: 'update_transactions'});
         }
         tabKeyPressed = false;
     });
@@ -146,22 +147,15 @@ $(document).ready(function () {
             transactionHeader(localHttpTransactions.length);
             $('#transaction-list').scrollTop(listUl[0].scrollHeight);
         }
-
+        let newCounter = transactions.getLastHttpTransactionCounter();
+        $('#transactions li:last-child .http-transaction-counter').html(newCounter);
         toggleAddTransaction();
     }
 
     chrome.runtime.onMessage.addListener(function (request) {
         switch (request.action) {
-            case "notice_transactions":
-                if (request.observable.recording === 'stopped') {
-                    addBtn.attr('disabled', 'disabled').addClass('disabled');
-                    nameInput.attr('disabled', 'disabled');
-                }
-                break;
             case "update_transactions":
-                let newCounter = transactions.getLastHttpTransactionCounter();
-                toggleAddTransaction();
-                $('#transactions li:last-child .http-transaction-counter').html(newCounter);
+                renderTransactions();
                 break;
         }
     });
