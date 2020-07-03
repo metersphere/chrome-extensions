@@ -23,30 +23,45 @@ function switchButtons(status) {
         case "stopped":
             hideButtons('pause', 'stop');
             showButtons('resume');
+            break;
     }
 }
 
-function loadButtons() {
+function updateButtons() {
     chrome.runtime.sendMessage({action: "check_status"}, function (response) {
         let status = response.status;
         switchButtons(status);
     });
-    $('#pause').click(function () {
-        switchButtons("pause");
-        chrome.runtime.sendMessage({action: "pause_recording"});
-    });
+}
+
+$(document).ready(function () {
+
+    updateButtons();
+
     $('#resume').click(function () {
         switchButtons("recording");
         chrome.runtime.sendMessage({action: "resume_recording"});
+        chrome.runtime.sendMessage({action: "update_buttons"});
+    });
+    $('#pause').click(function () {
+        switchButtons("pause");
+        chrome.runtime.sendMessage({action: "pause_recording"});
+        chrome.runtime.sendMessage({action: "update_buttons"});
     });
     $('#stop').click(function () {
         switchButtons("stopped");
         chrome.runtime.sendMessage({action: "stop_recording"});
+        chrome.runtime.sendMessage({action: "update_buttons"});
     });
-}
 
-$(document).ready(function () {
-    loadButtons();
+    // 同步所有Tab
+    chrome.runtime.onMessage.addListener(function (request) {
+        switch (request.action) {
+            case "update_buttons":
+                updateButtons();
+                break;
+        }
+    });
 });
 
 function isMacintosh() {
