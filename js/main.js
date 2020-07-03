@@ -32,7 +32,7 @@ $(document).ready(function () {
 
         hideBtn('main_download')
 
-        chrome.runtime.sendMessage({command: "check_status"}, function (response) {
+        chrome.runtime.sendMessage({action: "check_status"}, function (response) {
                 let status = response.status;
                 switchBtn(status);
             }
@@ -51,7 +51,7 @@ $('#record_start').click(() => {
     chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
         if (tabs.length > 0 && tabs[0].hasOwnProperty('id')) {
             let message = {
-                command: "start_recording",
+                action: "start_recording",
                 recordingTab: tabs[0]
             };
             chrome.runtime.sendMessage(message);
@@ -61,17 +61,17 @@ $('#record_start').click(() => {
 
 $('#record_pause').click(() => {
     switchBtn("pause");
-    chrome.runtime.sendMessage({command: "pause_recording"});
+    chrome.runtime.sendMessage({action: "pause_recording"});
 });
 
 $('#record_resume').click(() => {
     switchBtn("recording");
-    chrome.runtime.sendMessage({command: "resume_recording"});
+    chrome.runtime.sendMessage({action: "resume_recording"});
 });
 
 $('#record_stop').click(() => {
     switchBtn("stopped");
-    chrome.runtime.sendMessage({command: "stop_recording"});
+    chrome.runtime.sendMessage({action: "stop_recording"});
 });
 
 $('#record_edit').click(() => {
@@ -146,7 +146,16 @@ function switchBtn(status) {
                 }
             });
             break;
-        default:
+        default: // 同stopped
+            hideBtns('record_stop', 'record_pause', 'record_resume');
+            showBtn('record_start');
+            chrome.storage.local.get('recordData', function (item) {
+                if (item.recordData.length > 0) {
+                    showBtns('record_download', 'record_edit');
+                } else {
+                    hideBtns('record_download', 'record_edit');
+                }
+            });
 
     }
 }

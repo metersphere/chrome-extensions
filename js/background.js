@@ -113,7 +113,7 @@ class Recorder {
         chrome.tabs.query({}, function (tabs) {
             for (let i = 0; i < tabs.length; i++) {
                 chrome.tabs.sendMessage(tabs[i].id, {
-                        command: 'remove_transaction_ui'
+                        action: 'remove_transaction_ui'
                     }
                 );
             }
@@ -163,7 +163,7 @@ class Recorder {
             delete (requestFilter.types);
         });
 
-        chrome.tabs.sendMessage(tab.id, {command: "add_transaction_ui"});
+        chrome.tabs.sendMessage(tab.id, {action: "add_transaction_ui"});
     }
 }
 
@@ -340,7 +340,7 @@ let onSendHeaders = function (info) {
                     if (!recorder.traffic[key]) {
                         recorder.traffic[key] = data;
                         transactions.addLastHttpTransactionCounter();
-                        chrome.runtime.sendMessage({command: 'update_transactions'});
+                        chrome.runtime.sendMessage({action: 'update_transactions'});
                     }
                 }
             });
@@ -382,8 +382,8 @@ let getUrlExtension = function (url) {
 }
 
 let messageHandler = function (request, sender, sendResponse) {
-    if (request.command) {
-        switch (request.command) {
+    if (request.action) {
+        switch (request.action) {
             case 'start_recording':
                 recorder.startRecording(request.recordingTab);
                 sendResponse({

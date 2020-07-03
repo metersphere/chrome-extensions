@@ -114,7 +114,7 @@ $(document).ready(function () {
 
             addBtn.addClass('disabled').attr('disabled', 'disabled');
             nameInput.attr('disabled', 'disabled');
-            chrome.runtime.sendMessage({command: 'update_transactions'});
+            chrome.runtime.sendMessage({action: 'update_transactions'});
         }
     }
 
@@ -151,7 +151,7 @@ $(document).ready(function () {
     }
 
     chrome.runtime.onMessage.addListener(function (request) {
-        switch (request.command) {
+        switch (request.action) {
             case "notice_transactions":
                 if (request.observable.recording === 'stopped') {
                     addBtn.attr('disabled', 'disabled').addClass('disabled');

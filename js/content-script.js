@@ -156,7 +156,7 @@ function removeTransactionPopupUi() {
 }
 
 function transactionMessageHandler(request) {
-    switch (request.command) {
+    switch (request.action) {
         case "add_transaction_ui":
             removeTransactionPopupUi();
             addTransactionPopupUi();
@@ -169,7 +169,7 @@ function transactionMessageHandler(request) {
 
 chrome.runtime.onMessage.addListener(transactionMessageHandler);
 
-chrome.runtime.sendMessage({command: "check_status"}, function (response) {
+chrome.runtime.sendMessage({action: "check_status"}, function (response) {
     if (response.status === "recording" || response.status === 'pause') {
         addTransactionPopupUi();
     }

@@ -27,21 +27,21 @@ function switchButtons(status) {
 }
 
 function loadButtons() {
-    chrome.runtime.sendMessage({command: "check_status"}, function (response) {
+    chrome.runtime.sendMessage({action: "check_status"}, function (response) {
         let status = response.status;
         switchButtons(status);
     });
     $('#pause').click(function () {
         switchButtons("pause");
-        chrome.runtime.sendMessage({command: "pause_recording"});
+        chrome.runtime.sendMessage({action: "pause_recording"});
     });
     $('#resume').click(function () {
         switchButtons("recording");
-        chrome.runtime.sendMessage({command: "resume_recording"});
+        chrome.runtime.sendMessage({action: "resume_recording"});
     });
     $('#stop').click(function () {
         switchButtons("stopped");
-        chrome.runtime.sendMessage({command: "stop_recording"});
+        chrome.runtime.sendMessage({action: "stop_recording"});
     });
 }
 
