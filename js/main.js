@@ -2,7 +2,7 @@ let downloadRecording = new DownloadRecording();
 
 $(document).ready(function () {
     chrome.storage.local.get(null, function (item) {
-        if (!item.jmxName || !item.recordData || item.recordData.length < 1) {
+        if (!item.jmxName || !item.traffic || item.traffic.length < 1) {
             item.jmxName = generateJmxName();
             chrome.storage.local.set({"jmxName": item.jmxName});
         }
@@ -23,11 +23,6 @@ $(document).ready(function () {
             options.useragent = 'Current Browser';
             //options
             chrome.storage.local.set({"options": options});
-        }
-
-        if (!item.recordData) {
-            item.recordData = [];
-            chrome.storage.local.set({"recordData": item.recordData});
         }
 
         hideBtn('main_download')
