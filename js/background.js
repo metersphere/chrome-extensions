@@ -37,6 +37,10 @@ class Transactions {
         return this.httpTransactions[last];
     }
 
+    isHttpTransactionEmpty() {
+        return this.httpTransactions.length === 0;
+    }
+
     reset() {
         this.httpTransactions = [];
     }
@@ -82,6 +86,10 @@ class Recorder {
     }
 
     saveRecording() {
+        let lastHttpTransaction = transactions.getLastHttpTransaction();
+        if ((lastHttpTransaction.id === 0 && lastHttpTransaction.counter === 0) || transactions.isHttpTransactionEmpty()) {
+            return;
+        }
         let traffic = this.convertTraffic(this.traffic);
         // 转为字符，为了保持顺序。
         chrome.storage.local.set({"traffic": JSON.stringify(traffic)});
