@@ -614,7 +614,12 @@ class JMXGenerator {
                 }
             });
         } else {
-            return this.getRequestSamplers(this.data);
+            let item = this.data[0];
+            if (item.hasOwnProperty("url")) {
+                result.push(this.getRequestSampler(item));
+            } else {
+                return this.getRequestSamplers(item.request);
+            }
         }
         return result;
     }
