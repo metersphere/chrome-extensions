@@ -431,3 +431,9 @@ let messageHandler = function (request, sender, sendResponse) {
 }
 
 chrome.runtime.onMessage.addListener(messageHandler);
+
+chrome.runtime.onInstalled.addListener(function (details) {
+    if (details.reason === 'install') {
+        chrome.storage.local.clear();
+    }
+});
