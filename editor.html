@@ -95,12 +95,6 @@
             background-color: #ecf5ff;
         }
 
-        .button:active, .button:focus {
-            color: #3a8ee6;
-            border-color: #3a8ee6;
-            outline: none;
-        }
-
         .row {
             display: flex;
             flex-direction: row;
@@ -122,8 +116,16 @@
             margin: 10px;
         }
 
-        #cancel {
-            background-color: #f4f4f5;;
+        .primary {
+            color: #409eff;
+            background: #ecf5ff;
+            border-color: #b3d8ff;
+        }
+
+        .primary:hover {
+            background: #409eff;
+            border-color: #409eff;
+            color: #fff;
         }
 
     </style>
@@ -138,6 +140,7 @@
             <label for="name">文件名:</label>
             <input id="name" type="text" name="name"/>
             <button id="export-jmx" class="button">导出JMX</button>
+            <button id="export-json" class="button">导出JSON</button>
         </div>
     </div>
 </div>
@@ -148,7 +151,7 @@
     </div>
     <div class="row">
         <button id="cancel" class="button">取消</button>
-        <button id="submit" class="button">导出</button>
+        <button id="submit" class="button primary">导出</button>
     </div>
 </div>
 </body>

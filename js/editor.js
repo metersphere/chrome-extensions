@@ -14,6 +14,11 @@ $(document).ready(function () {
         editor.set(JSON.parse(item.traffic));
     })
 
+    $('#export-json').click(() => {
+        transactions = checkTransactions(editor.get());
+        downloadRecording.downloadJSON(name.val(), transactions);
+    });
+
     $('#export-jmx').click(() => {
         transactions = checkTransactions(editor.get());
         let domains = downloadRecording.getDomains(transactions);

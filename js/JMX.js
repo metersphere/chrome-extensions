@@ -720,13 +720,21 @@ class DownloadRecording {
         return result;
     }
 
+    downloadJSON(name, transactions) {
+        this.download(name + ".json", JSON.stringify(transactions));
+    }
+
     downloadJMX(name, domains, transactions) {
         let data = this.convertTransactions(transactions);
         let jmx = new JMXGenerator(data, name, domains);
-        let blob = new Blob([jmx.toXML()], {type: "application/octet-stream"});
+        this.download(name + ".jmx", jmx.toXML());
+    }
+
+    download(name, str) {
+        let blob = new Blob([str], {type: "application/octet-stream"});
         let link = document.createElement('a');
         link.href = window.URL.createObjectURL(blob);
-        link.download = name + ".jmx";
+        link.download = name;
         link.click();
         window.URL.revokeObjectURL(link.href);
     }
