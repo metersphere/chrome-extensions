@@ -14,34 +14,9 @@ $(document).ready(function () {
         editor.set(JSON.parse(item.traffic));
     })
 
-    let click = $('#export-json').click(() => {
+    $('#export-json').click(() => {
         transactions = checkTransactions(editor.get());
-        let exportResult = {};
-        let scenarios = [];
-        for (const scenarioKey of Object.keys(transactions)) {
-            let scenario = {};
-            let requests = [];
-            let requestObj = transactions[scenarioKey];
-            scenario.name = scenarioKey;
-            for (const requestKey of Object.keys(requestObj)) {
-                let request = {};
-                Object.assign(request, requestObj[requestKey]);
-                request.name = requestKey;
-                if (request.method === 'POST' && request.body) {
-                    let bodyStr = '';
-                    for (const body of request.body) {
-                        bodyStr += body;
-                    }
-                    request.body = {};
-                    request.body.raw = bodyStr;
-                }
-                requests.push(request);
-            }
-            scenario.requests = requests;
-            scenarios.push(scenario);
-        };
-        exportResult.scenarios = scenarios;
-        downloadRecording.downloadJSON(name.val(), exportResult);
+        downloadRecording.downloadJSON(name.val(), transactions);
     });
 
     $('#export-jmx').click(() => {
