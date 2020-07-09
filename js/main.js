@@ -50,6 +50,7 @@ $('#record_start').click(() => {
                 recordingTab: tabs[0]
             };
             chrome.runtime.sendMessage(message);
+            window.close();
         }
     });
 });
