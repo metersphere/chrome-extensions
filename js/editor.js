@@ -16,7 +16,11 @@ $(document).ready(function () {
 
     $('#export-json').click(() => {
         transactions = checkTransactions(editor.get());
-        downloadRecording.downloadJSON(name.val(), transactions);
+
+        let p = new parseJsonLayout(transactions);
+        let parse = p.parse();
+
+        downloadRecording.downloadJSON(name.val(), parse);
     });
 
     $('#export-jmx').click(() => {
