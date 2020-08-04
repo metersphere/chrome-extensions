@@ -58,13 +58,22 @@
             float: left;
         }
 
-        .footer {
-            width: 100%;
-            height: 40px;
-            padding: 0 10px;
-            background-color: rgb(44, 42, 72);
-            color: rgb(245, 245, 245);
-            font-size: 12px;
+        .options {
+            border-top: #E9E9E9 solid 1px;
+            padding: 10px 0;
+        }
+
+        .options a {
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .options a[aria-expanded=true] i {
+            transform: rotate(90deg);
+        }
+
+        #options {
+            background-color: #f4f8fe;
         }
 
     </style>
@@ -121,6 +130,45 @@
                 <span class="glyphicon  glyphicon-download-alt gi-1x" data-toggle="tooltip" data-placement="right"
                       title="下载"></span>
             </a>
+        </div>
+    </div>
+    <div class="options">
+        <a data-toggle="collapse" href="#options" aria-expanded="false" aria-controls="options">
+            <i class="glyphicon glyphicon-triangle-right"></i>
+            高级选项
+        </a>
+        <div class="collapse" id="options">
+            录制内容:
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" name="options" id="cookie">
+                    Cookie
+                </label>
+            </div>
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" name="options" id="record_css">
+                    Css
+                </label>
+            </div>
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" name="options" id="record_js">
+                    JS
+                </label>
+            </div>
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" name="options" id="record_images">
+                    Images
+                </label>
+            </div>
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" name="options" id="record_other">
+                    Other
+                </label>
+            </div>
         </div>
     </div>
 </div>

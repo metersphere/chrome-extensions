@@ -8,22 +8,7 @@ $(document).ready(function () {
         }
         $("#jmx_name").val(item.jmxName);
 
-        if (!item.options) {
-            let options = {};
-            options.requests_to_record = 'top_level';
-            options.record_ajax = true;
-            options.functional_test = false;
-            options.cookie = true;
-            options.record_css = false;
-            options.record_js = false;
-            options.record_images = false;
-            options.record_other = false;
-            options.cache = true;
-            options.regex_include = 'http://*/*, https://*/*';
-            options.useragent = 'Current Browser';
-            //options
-            chrome.storage.local.set({"options": options});
-        }
+        initOptions(item.options);
 
         hideBtn('main_download')
 
@@ -35,11 +20,19 @@ $(document).ready(function () {
     });
 });
 
-
 $("#jmx_name").change(() => {
     chrome.storage.local.set({"jmxName": $(" #jmx_name ").val()});
 });
 
+$("input[name='options']").each(function () {
+    let id = $(this).attr("id");
+    $(this).change(() => {
+        chrome.storage.local.get("options", item => {
+            item.options[id] = $(this).prop('checked');
+            chrome.storage.local.set({"options": item.options});
+        });
+    });
+});
 
 $('#record_start').click(() => {
     switchBtn("recording");
@@ -76,7 +69,6 @@ $('#record_edit').click(() => {
     });
 });
 
-let d
 $('#record_download').click(() => {
     chrome.storage.local.get(['traffic', 'jmxName'], item => {
         let name = item.jmxName;
@@ -185,4 +177,29 @@ function generateJmxName() {
     if (min.length < 2) min = '0' + min;
 
     return ["RECORD", year, month, day, hour, min].join('-');
+}
+
+function initOptions(options) {
+    if (!options) {
+        options = {};
+        options.requests_to_record = 'top_level';
+        options.record_ajax = true;
+        options.functional_test = false;
+        options.cookie = true;
+        options.record_css = false;
+        options.record_js = false;
+        options.record_images = false;
+        options.record_other = false;
+        options.cache = true;
+        options.regex_include = 'http://*/*, https://*/*';
+        options.useragent = 'Current Browser';
+        //options
+        chrome.storage.local.set({"options": options});
+    } else {
+        if (options.cookie) $("#cookie").prop("checked", true);
+        if (options.record_css) $("#record_css").prop("checked", true);
+        if (options.record_js) $("#record_js").prop("checked", true);
+        if (options.record_images) $("#record_images").prop("checked", true);
+        if (options.record_other) $("#record_other").prop("checked", true);
+    }
 }
