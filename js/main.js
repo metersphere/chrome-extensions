@@ -196,6 +196,7 @@ function initOptions(options) {
         //options
         chrome.storage.local.set({"options": options});
     } else {
+        if (options.record_ajax) $("#record_ajax").prop("checked", true);
         if (options.cookie) $("#cookie").prop("checked", true);
         if (options.record_css) $("#record_css").prop("checked", true);
         if (options.record_js) $("#record_js").prop("checked", true);
