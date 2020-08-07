@@ -220,12 +220,9 @@ let onBeforeRequest = function (info) {
                     if (info.requestBody.raw) {
                         info.requestBody.raw.forEach(function (raw) {
                             if (raw.bytes) {
-                                let bodyString = '';
                                 const bytes = new Uint8Array(raw.bytes);
-                                const bodyLength = bytes.length;
-                                for (let i = 0; i < bodyLength; i++) {
-                                    bodyString += String.fromCharCode(bytes[i]);
-                                }
+                                let encodedString = String.fromCharCode.apply(null, bytes);
+                                let bodyString = decodeURIComponent(escape(encodedString));
                                 postData.push(bodyString);
                             } else {
                                 // @todo:support for file uploads
