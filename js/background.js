@@ -164,9 +164,9 @@ class Recorder {
                 requestFilter.types.push('ping');
             }
 
-            chrome.webRequest.onBeforeSendHeaders.addListener(onBeforeSendHeaders, requestFilter, ['blocking', 'requestHeaders']);
+            chrome.webRequest.onBeforeSendHeaders.addListener(onBeforeSendHeaders, requestFilter, ['blocking', 'requestHeaders', 'extraHeaders']);
             chrome.webRequest.onBeforeRequest.addListener(onBeforeRequest, requestFilter, ['requestBody']);
-            chrome.webRequest.onSendHeaders.addListener(onSendHeaders, requestFilter, ['requestHeaders']);
+            chrome.webRequest.onSendHeaders.addListener(onSendHeaders, requestFilter, ['requestHeaders', 'extraHeaders']);
 
             delete (requestFilter.types);
         });
