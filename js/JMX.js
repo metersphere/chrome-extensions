@@ -248,6 +248,24 @@ class HTTPSamplerProxy extends DefaultTestElement {
 
         this.boolProp("HTTPSampler.follow_redirects", this.request.follow, true);
         this.boolProp("HTTPSampler.use_keepalive", this.request.keepalive, true);
+        this.boolProp("HTTPSampler.DO_MULTIPART_POST", this.request.multipart);
+    }
+}
+
+class HTTPSamplerFiles extends Element {
+    constructor(files = []) {
+        super('elementProp', {
+            name: "HTTPsampler.Files", // s必须小写
+            elementType: "HTTPFileArgs"
+        });
+
+        let collectionProp = this.collectionProp('HTTPFileArgs.files');
+        files.forEach(file => {
+            let elementProp = collectionProp.elementProp(file.path, 'HTTPFileArg');
+            elementProp.stringProp('File.path', file.path);
+            elementProp.stringProp('File.paramname', file.name);
+            elementProp.stringProp('File.mimetype', file.type);
+        });
     }
 }
 
@@ -523,6 +541,13 @@ class JMXRequest {
                 this.parameters.push({name: key, value: value});
             }
         });
+        item.headers.forEach(header => {
+            if (header.name.toLowerCase() === 'content-type') {
+                if (header.value.includes("multipart/form-data")) {
+                    this.multipart = true;
+                }
+            }
+        })
     }
 }
 
@@ -649,6 +674,9 @@ class JMXGenerator {
                     }
                 }
                 httpSamplerProxy.add(new HTTPSamplerArguments(args));
+                if (item.files && item.files.length > 0) {
+                    httpSamplerProxy.add(new HTTPSamplerFiles(item.files));
+                }
             }
             return httpSamplerProxy;
         }

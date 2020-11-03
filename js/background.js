@@ -52,6 +52,7 @@ var transactions = new Transactions;
 class Recorder {
     constructor() {
         this.status = "stopped";
+        this.files = {};
         this.body = {};
         this.traffic = {};
         this.activeTabId = 0;
@@ -207,6 +208,7 @@ let onBeforeRequest = function (info) {
     if (recorder.isRecording()) {
         if (info.requestBody) {
             let postData = '';
+            let files = [];
             if (!info.requestBody.error) {
                 if (info.requestBody.formData) {
                     postData = info.requestBody.formData;
@@ -218,14 +220,34 @@ let onBeforeRequest = function (info) {
                 } else {
                     postData = [];
                     if (info.requestBody.raw) {
+                        let boundary = "";
                         info.requestBody.raw.forEach(function (raw) {
                             if (raw.bytes) {
                                 const bytes = new Uint8Array(raw.bytes);
                                 let encodedString = String.fromCharCode.apply(null, bytes);
                                 let bodyString = decodeURIComponent(escape(encodedString));
-                                postData.push(bodyString);
-                            } else {
-                                // @todo:support for file uploads
+                                if (bodyString.includes("------WebKitFormBoundary")) {
+                                    if (bodyString.includes("Content-Disposition")) {
+                                        boundary = bodyString;
+                                    }
+                                } else {
+                                    postData.push(bodyString);
+                                }
+                            }
+                            if (raw.file) {
+                                let file = {path: raw.file};
+                                boundary.split("\n").forEach(data => {
+                                    data.split(";").forEach(item => {
+                                        let string = item.trim();
+                                        if (string.startsWith("name=")) {
+                                            file.name = string.substring(6, string.length - 1);
+                                        }
+                                        if (string.startsWith("Content-Type: ")) {
+                                            file.type = string.substring(14, string.length);
+                                        }
+                                    })
+                                })
+                                files.push(file);
                             }
                         });
                     }
@@ -262,6 +284,7 @@ let onBeforeRequest = function (info) {
             }
             let key = info.method + info.requestId;
             recorder.body[key] = postData;
+            recorder.files[key] = files;
         }
     }
 }
@@ -319,6 +342,9 @@ let onSendHeaders = function (info) {
                     data.method = info.method;
                     if (recorder.body[key]) {
                         data.body = recorder.body[key];
+                    }
+                    if (recorder.files[key]) {
+                        data.files = recorder.files[key];
                     }
                     data.requestId = info.requestId;
                     data.request_type = requestType;
