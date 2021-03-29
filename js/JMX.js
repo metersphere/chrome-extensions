@@ -75,7 +75,7 @@ class Element {
 
     replace(str) {
         if (!str || !(typeof str === 'string')) return str;
-        return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/'/g, "&apos;").replace(/"/g, "&quot;");
+        return replaceChar(str);
     }
 
     toXML(indent) {
