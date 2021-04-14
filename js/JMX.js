@@ -232,7 +232,7 @@ class TransactionController extends DefaultTestElement {
 
 class HTTPSamplerProxy extends DefaultTestElement {
     constructor(testName, request) {
-        super('HTTPSamplerProxy', 'HttpTestSampleGui', 'HTTPSamplerProxy', testName);
+        super('HTTPSamplerProxy', 'HttpTestSampleGui', 'HTTPSamplerProxy', '【'+ request.method +'】'+ testName);
         this.request = request || {};
 
         this.stringProp("HTTPSampler.domain", this.request.hostname);
