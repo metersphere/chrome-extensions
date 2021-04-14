@@ -656,7 +656,10 @@ class JMXGenerator {
             let request = new JMXRequest(item, this.domains);
             let httpSamplerProxy = new HTTPSamplerProxy(name || "", request);
             httpSamplerProxy.put(new HeaderManager(name + " Headers", item.headers));
-
+            //导出jmx时过滤跨域options的接口
+            if (item.method.toUpperCase() === 'OPTIONS') {
+                return ;
+            }
             if (item.method.toUpperCase() === 'GET') {
                 httpSamplerProxy.add(new HTTPSamplerArguments(request.parameters));
             } else {
