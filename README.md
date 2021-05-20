@@ -45,7 +45,7 @@ https://chrome.google.com/webstore/detail/metersphere/dfikodepgdmofjbffdhpakgkac
   
 ## 微信群
 
-![wechat-group](./img/wechat-group.png)
+![wechat-group](https://metersphere.oss-cn-hangzhou.aliyuncs.com/img/wechat-group.png)
 
 ## License & Copyright
 
