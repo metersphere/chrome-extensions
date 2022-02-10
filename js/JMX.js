@@ -534,7 +534,7 @@ class JMXRequest {
         this.protocol = url.protocol.split(":")[0];
         this.parameters = [];
         if (this.method.toUpperCase() !== "GET") {
-            this.pathname += url.search.replace('&', '&amp;');
+            this.pathname += url.search.replaceAll('&', '&amp;');
         }
         url.searchParams.forEach((value, key) => {
             if (key && value) {
@@ -755,8 +755,7 @@ class DownloadRecording {
     downloadJMX(name, domains, transactions) {
         let data = this.convertTransactions(transactions);
         let jmx = new JMXGenerator(data, name, domains);
-        let str = this.decodeHtml(jmx.toXML());
-        this.download(name + ".jmx", str);
+        this.download(name + ".jmx", jmx.toXML());
     }
 
     download(name, str) {
@@ -766,17 +765,5 @@ class DownloadRecording {
         link.download = name;
         link.click();
         window.URL.revokeObjectURL(link.href);
-    }
-
-    decodeHtml(str) {
-        let temp = ""
-        if (str.length == 0) return ""
-        temp = str.replace(/&amp;/g, "&")
-        temp = temp.replace(/&lt;/g, "<");
-        temp = temp.replace(/&gt;/g, ">");
-        temp = temp.replace(/&nbsp;/g, " ");
-        temp = temp.replace(/&#39;/g, "\'");
-        temp = temp.replace(/&quot;/g, "\"");
-        return temp
     }
 }
