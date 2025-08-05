@@ -1,3 +1,8 @@
+// Import required scripts for service worker
+// importScripts('common/browser-polyfill.js', 'URI.js');
+
+console.log('Background script starting...');
+
 const WEB_EXTENSIONS_LIBRARY = ["atom", "json", "map", "topojson", "jsonld", "rss", "geojson", "rdf", "xml", "js", "webmanifest", "webapp", "appcache", "mid", "midi", "kar", "aac", "f4a", "f4b", "m4a", "mp3", "oga", "ogg", "opus", "ra", "wav", "bmp", "gif", "jpeg", "jpg", "jxr", "hdp", "wdp", "png", "svg", "svgz", "tif", "tiff", "wbmp", "webp", "jng", "3gp", "3gpp", "f4p", "f4v", "m4v", "mp4", "mpeg", "mpg", "ogv", "mov", "webm", "flv", "mng", "asf", "asx", "wmv", "avi", "cur", "ico", "doc", "xls", "ppt", "docx", "xlsx", "pptx", "deb", "woff", "woff2", "eot", "ttc", "ttf", "otf", "ear", "jar", "war", "hqx", "bin", "deb", "dll", "dmg", "img", "iso", "msi", "msm", "msp", "safariextz", "pdf", "ai", "eps", "ps", "rtf", "kml", "kmz", "wmlc", "7z", "bbaw", "torrent", "crx", "cco", "jardiff", "jnlp", "run", "iso", "oex", "pl", "pm", "pdb", "prc", "rar", "rpm", "sea", "swf", "sit", "tcl", "tk", "crt", "der", "pem", "xpi", "exe", "xhtml", "xsl", "zip", "css", "csv", "htm", "html", "shtml", "md", "mml", "txt", "vcard", "vcf", "xloc", "jad", "wml", "vtt", "htc", "desktop", "md", "ts", "ico", "jar", "so"];
 
 class Transaction {
@@ -93,7 +98,7 @@ class Recorder {
         }
         let traffic = this.convertTraffic(this.traffic);
         // 转为字符，为了保持顺序。
-        chrome.storage.local.set({"traffic": JSON.stringify(traffic)});
+        chrome.storage.local.set({ "traffic": JSON.stringify(traffic) });
     }
 
     resetRecording() {
@@ -103,7 +108,7 @@ class Recorder {
         this.activeTabId = 0;
         transactions.reset();
         transactions.addHttpTransaction("测试用例");
-        chrome.storage.local.set({"traffic": ''});
+        chrome.storage.local.set({ "traffic": '' });
     }
 
     pauseRecording() {
@@ -122,8 +127,8 @@ class Recorder {
         chrome.tabs.query({}, function (tabs) {
             for (let i = 0; i < tabs.length; i++) {
                 chrome.tabs.sendMessage(tabs[i].id, {
-                        action: 'remove_transaction_ui'
-                    }
+                    action: 'remove_transaction_ui'
+                }
                 );
             }
         });
@@ -131,11 +136,14 @@ class Recorder {
     }
 
     startRecording(tab) {
+        console.log('Starting recording for tab:', tab);
         this.resetRecording();
         this.changeStatus('recording');
+        console.log('Recording status changed to:', this.status);
 
         chrome.storage.local.get('options', function (item) {
-            let options = item.options;
+            console.log('Retrieved options:', item.options);
+            let options = item.options || {};
             let requestFilter = {};
             let matchPatterns;
             if (!options.regex_include) {
@@ -145,6 +153,7 @@ class Recorder {
                     return item.trim();
                 });
             }
+            console.log('Match patterns:', matchPatterns);
             requestFilter.urls = matchPatterns;
             requestFilter.types = ['main_frame', 'sub_frame', 'object'];
             if (options.record_ajax !== false) {
@@ -165,40 +174,40 @@ class Recorder {
                 requestFilter.types.push('ping');
             }
 
-            chrome.webRequest.onBeforeSendHeaders.addListener(onBeforeSendHeaders, requestFilter, ['blocking', 'requestHeaders', 'extraHeaders']);
+            console.log('Adding webRequest listeners with filter:', requestFilter);
+            chrome.webRequest.onBeforeSendHeaders.addListener(onBeforeSendHeaders, requestFilter, ['requestHeaders', 'extraHeaders']);
             chrome.webRequest.onBeforeRequest.addListener(onBeforeRequest, requestFilter, ['requestBody']);
             chrome.webRequest.onSendHeaders.addListener(onSendHeaders, requestFilter, ['requestHeaders', 'extraHeaders']);
 
             delete (requestFilter.types);
         });
 
-        chrome.tabs.sendMessage(tab.id, {action: "add_transaction_ui"});
+        console.log('Sending message to tab:', tab.id);
+        chrome.tabs.sendMessage(tab.id, { action: "add_transaction_ui" }, function (response) {
+            if (chrome.runtime.lastError) {
+                console.error('Error sending message to tab:', chrome.runtime.lastError);
+            } else {
+                console.log('Message sent successfully to tab');
+            }
+        });
     }
 }
 
 // 全局recorder
 var recorder = new Recorder();
+console.log('Recorder initialized:', recorder);
 
 let onBeforeSendHeaders = function (info) {
     if (recorder.isRecording()) {
         chrome.storage.local.get("options", function (item) {
             let options = item.options;
             if (info.requestHeaders) {
+                // Note: In Manifest V3 without blocking permissions, 
+                // we can only observe headers, not modify them
+                // The original useragent modification functionality is limited
                 if (options.useragent && options.useragent !== 'Current Browser') {
-                    let headers = info.requestHeaders;
-                    headers.forEach(function (header) {
-                        if (header.name.toLowerCase() === 'user-agent') {
-                            header.value = useragent;
-                        }
-                    });
-                    return {
-                        requestHeaders: headers
-                    };
+                    console.log('User agent would be modified to:', options.useragent);
                 }
-            } else {
-                return {
-                    requestHeaders: []
-                };
             }
         });
     }
@@ -235,7 +244,7 @@ let onBeforeRequest = function (info) {
                                 }
                             }
                             if (raw.file) {
-                                let file = {path: raw.file};
+                                let file = { path: raw.file };
                                 boundary.split("\n").forEach(data => {
                                     data.split(";").forEach(item => {
                                         let string = item.trim();
@@ -258,8 +267,19 @@ let onBeforeRequest = function (info) {
                     try {
                         let jsonParsedString = JSON.parse(dataString);
                         if (!jsonParsedString) {
-                            let parsedValue = URI.parseQuery(dataString);
-                            if (!$.isEmptyObject(parsedValue)) {
+                            // Replace URI.parseQuery with native URLSearchParams
+                            let parsedValue = {};
+                            try {
+                                const urlParams = new URLSearchParams(dataString);
+                                for (let [key, value] of urlParams) {
+                                    parsedValue[key] = value;
+                                }
+                            } catch (e) {
+                                // Fallback to simple parsing
+                                parsedValue = {};
+                            }
+
+                            if (parsedValue && Object.keys(parsedValue).length > 0) {
                                 let notParseFlag = false;
                                 for (const prop in parsedValue) {
                                     if (parsedValue.hasOwnProperty(prop)) {
@@ -293,7 +313,7 @@ let onSendHeaders = function (info) {
     if (recorder.isRecording()) {
         chrome.storage.local.get(["options"], function (item) {
             let options = item.options;
-            chrome.tabs.query({active: true, currentWindow: true}, function (tabs) {
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
                 if (tabs.length > 0) {
                     if (tabs[0].hasOwnProperty('id')) {
                         recorder.activeTabId = tabs[0].id;
@@ -371,7 +391,7 @@ let onSendHeaders = function (info) {
                     if (!recorder.traffic[key]) {
                         recorder.traffic[key] = data;
                         transactions.addLastHttpTransactionCounter();
-                        chrome.runtime.sendMessage({action: 'update_transactions'});
+                        chrome.runtime.sendMessage({ action: 'update_transactions' });
                     }
                 }
             });
@@ -396,7 +416,7 @@ let isFromRoot = function (rootDomain, testURL) {
 let isFilepath = function (url) {
     let fileType = getUrlExtension(url);
     if (fileType) {
-        if ($.inArray(fileType, WEB_EXTENSIONS_LIBRARY) !== -1) {
+        if (WEB_EXTENSIONS_LIBRARY.indexOf(fileType) !== -1) {
             return true;
         }
     }
@@ -413,9 +433,11 @@ let getUrlExtension = function (url) {
 }
 
 let messageHandler = function (request, sender, sendResponse) {
+    console.log('Received message:', request);
     if (request.action) {
         switch (request.action) {
             case 'start_recording':
+                console.log('Starting recording with tab:', request.recordingTab);
                 recorder.startRecording(request.recordingTab);
                 sendResponse({
                     msg: 'ok',
@@ -462,9 +484,26 @@ let messageHandler = function (request, sender, sendResponse) {
 }
 
 chrome.runtime.onMessage.addListener(messageHandler);
+console.log('Message handler registered');
 
 chrome.runtime.onInstalled.addListener(function (details) {
+    console.log('Extension installed/updated:', details);
     if (details.reason === 'install') {
         chrome.storage.local.clear();
+        // Set default options
+        chrome.storage.local.set({
+            'options': {
+                'record_ajax': true,
+                'record_css': true,
+                'record_js': true,
+                'record_images': true,
+                'record_other': true,
+                'regex_include': '',
+                'useragent': 'Current Browser'
+            }
+        });
     }
 });
+
+// Initialize on startup
+console.log('Background script loaded, recorder status:', recorder.status);
