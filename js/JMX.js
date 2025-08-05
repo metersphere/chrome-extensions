@@ -585,7 +585,7 @@ class JMXGenerator {
         testPlan.put(this.getCookieManager());
         testPlan.put(this.getCacheManager());
 
-        let threadGroup = new ThreadGroup("Thread Group");
+        let threadGroup = new ThreadGroup(name);
         this.getTransactionController().forEach(sampler => {
             threadGroup.put(sampler);
         })
