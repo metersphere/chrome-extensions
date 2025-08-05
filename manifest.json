@@ -1,10 +1,10 @@
 {
-    "manifest_version": 2,
+    "manifest_version": 3,
     "name": "MeterSphere",
     "description": "MeterSphere Recorder",
-    "version": "1.2.4",
+    "version": "2.0.0",
     "homepage_url": "https://www.metersphere.io",
-    "browser_action": {
+    "action": {
         "default_icon": "icon/favicon.png",
         "default_popup": "main.html",
         "default_title": "MeterSphere"
@@ -15,12 +15,7 @@
         "128": "icon/favicon-128.png"
     },
     "background": {
-        "scripts": [
-            "common/browser-polyfill.js",
-            "jquery/jquery-3.4.1.min.js",
-            "js/background.js",
-            "js/URI.js"
-        ]
+        "service_worker": "js/background.js"
     },
     "content_scripts": [
         {
@@ -38,24 +33,33 @@
             "run_at": "document_start"
         }
     ],
-    "content_security_policy": "script-src 'self'; object-src 'self'",
     "permissions": [
         "tabs",
         "activeTab",
         "webRequest",
+        "declarativeNetRequest",
         "contextMenus",
         "downloads",
         "webNavigation",
         "notifications",
         "storage",
         "unlimitedStorage",
-        "webRequestBlocking",
-        "http://*/*",
-        "https://*/*",
         "browsingData"
     ],
+    "host_permissions": [
+        "http://*/*",
+        "https://*/*"
+    ],
     "web_accessible_resources": [
-        "html/transaction-ui.html",
-        "html/transaction-controls.html"
+        {
+            "resources": [
+                "html/transaction-ui.html",
+                "html/transaction-controls.html"
+            ],
+            "matches": [
+                "http://*/*",
+                "https://*/*"
+            ]
+        }
     ]
 }
