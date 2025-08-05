@@ -479,6 +479,35 @@ let messageHandler = function (request, sender, sendResponse) {
                     error: false
                 });
                 break;
+            case 'get_transactions':
+                sendResponse({
+                    transactions: transactions,
+                    msg: 'ok',
+                    error: false
+                });
+                break;
+            case 'add_transaction':
+                let httpTransaction = transactions.addHttpTransaction(request.name);
+                sendResponse({
+                    transaction: httpTransaction,
+                    msg: 'ok',
+                    error: false
+                });
+                break;
+            case 'set_transaction_name':
+                transactions.setHttpTransactionName(request.index, request.name);
+                sendResponse({
+                    msg: 'ok',
+                    error: false
+                });
+                break;
+            case 'update_transactions':
+                // 不需要发送消息给自己，只回应即可
+                sendResponse({
+                    msg: 'ok',
+                    error: false
+                });
+                break;
         }
     }
 }

@@ -1,8 +1,63 @@
-let background = chrome.extension.getBackgroundPage();
-let transactions = background.transactions;
+let transactions = null;
 let tabKeyPressed = false;
 
-$(document).ready(function () {
+// 从service worker获取transactions数据
+async function getTransactionsFromBackground() {
+    return new Promise((resolve) => {
+        chrome.runtime.sendMessage({ action: 'get_transactions' }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error('Error getting transactions:', chrome.runtime.lastError);
+                resolve(null);
+            } else {
+                resolve(response ? response.transactions : null);
+            }
+        });
+    });
+}
+
+$(document).ready(async function () {
+    // 初始化时获取transactions数据
+    try {
+        transactions = await getTransactionsFromBackground();
+        if (!transactions) {
+            // 如果获取失败，创建一个空的transactions对象
+            transactions = {
+                httpTransactions: [],
+                addHttpTransaction: function (name) {
+                    chrome.runtime.sendMessage({ action: 'add_transaction', name: name });
+                },
+                setHttpTransactionName: function (index, name) {
+                    chrome.runtime.sendMessage({ action: 'set_transaction_name', index: index, name: name });
+                },
+                getLastHttpTransactionCounter: function () {
+                    return this.httpTransactions.length > 0 ? this.httpTransactions[this.httpTransactions.length - 1].counter : 0;
+                },
+                getLastHttpTransaction: function () {
+                    return this.httpTransactions.length > 0 ? this.httpTransactions[this.httpTransactions.length - 1] : { counter: 0 };
+                }
+            };
+        }
+    } catch (error) {
+        console.error('Failed to get transactions from background:', error);
+        transactions = {
+            httpTransactions: [],
+            addHttpTransaction: function (name) {
+                chrome.runtime.sendMessage({ action: 'add_transaction', name: name });
+            },
+            setHttpTransactionName: function (index, name) {
+                chrome.runtime.sendMessage({ action: 'set_transaction_name', index: index, name: name });
+            },
+            getLastHttpTransactionCounter: function () {
+                return this.httpTransactions.length > 0 ? this.httpTransactions[this.httpTransactions.length - 1].counter : 0;
+            },
+            getLastHttpTransaction: function () {
+                return this.httpTransactions.length > 0 ? this.httpTransactions[this.httpTransactions.length - 1] : { counter: 0 };
+            }
+        };
+    }
+
+    // 初始渲染
+    renderTransactions();
     let nameInput = $('#transaction_name');
     let addBtn = $('#add-transaction');
     let listUl = $('#transactions');
@@ -58,8 +113,18 @@ $(document).ready(function () {
         let transactionName = $(this).val();
         if (!stringIsEmpty(transactionName)) {
             $(this).prev().text(transactionName);
-            transactions.setHttpTransactionName(key, transactionName);
-            chrome.runtime.sendMessage({action: 'update_transactions'});
+            // 通过消息传递更新transaction名称
+            chrome.runtime.sendMessage({
+                action: 'set_transaction_name',
+                index: key,
+                name: transactionName
+            }, () => {
+                // 本地也更新
+                if (transactions.httpTransactions[key]) {
+                    transactions.httpTransactions[key].name = transactionName;
+                }
+                chrome.runtime.sendMessage({ action: 'update_transactions' });
+            });
         }
         tabKeyPressed = false;
     });
@@ -104,23 +169,36 @@ $(document).ready(function () {
 
     function addNewTransaction(transactionName) {
         if (!stringIsEmpty(transactionName)) {
-            let httpTransaction = transactions.addHttpTransaction(transactionName);
-            let httpLength = transactions.httpTransactions.length;
-            transactionHeader(httpLength);
+            // 通过消息传递添加transaction
+            chrome.runtime.sendMessage({
+                action: 'add_transaction',
+                name: transactionName
+            }, (response) => {
+                if (response && response.transaction) {
+                    // 本地也添加到transactions数组中
+                    transactions.httpTransactions.push(response.transaction);
 
-            const stepsCount = httpLength + 1;
-            nameInput.attr('placeholder', `${stepsCount} 测试用例 / 标签`);
+                    let httpLength = transactions.httpTransactions.length;
+                    transactionHeader(httpLength);
 
-            listUl.append(liType(httpTransaction));
+                    const stepsCount = httpLength + 1;
+                    nameInput.attr('placeholder', `${stepsCount} 测试用例 / 标签`);
 
-            addBtn.addClass('disabled').attr('disabled', 'disabled');
-            nameInput.attr('disabled', 'disabled');
-            chrome.runtime.sendMessage({action: 'update_transactions'});
+                    listUl.append(liType(response.transaction));
+
+                    addBtn.addClass('disabled').attr('disabled', 'disabled');
+                    nameInput.attr('disabled', 'disabled');
+                    chrome.runtime.sendMessage({ action: 'update_transactions' });
+                }
+            });
         }
     }
 
     function toggleAddTransaction() {
-        let disable = transactions.getLastHttpTransactionCounter() === 0;
+        let lastTransaction = transactions.httpTransactions.length > 0 ?
+            transactions.httpTransactions[transactions.httpTransactions.length - 1] :
+            { counter: 0 };
+        let disable = lastTransaction.counter === 0;
         if (disable) {
             nameInput.val('').attr('disabled', true);
             addBtn.addClass('disabled').attr('disabled', true);
@@ -137,19 +215,26 @@ $(document).ready(function () {
     }
 
     function renderTransactions() {
-        listUl.html('');
-        let localHttpTransactions = transactions.httpTransactions;
-        localHttpTransactions.forEach(function (transaction) {
-            listUl.append(liType(transaction));
-        });
+        // 从后台获取最新的transactions数据
+        chrome.runtime.sendMessage({ action: 'get_transactions' }, (response) => {
+            if (response && response.transactions) {
+                transactions = response.transactions;
 
-        if (localHttpTransactions.length > 0) {
-            transactionHeader(localHttpTransactions.length);
-            $('#transaction-list').scrollTop(listUl[0].scrollHeight);
-        }
-        let newCounter = transactions.getLastHttpTransactionCounter();
-        $('#transactions li:last-child .http-transaction-counter').html(newCounter);
-        toggleAddTransaction();
+                listUl.html('');
+                let localHttpTransactions = transactions.httpTransactions;
+                localHttpTransactions.forEach(function (transaction) {
+                    listUl.append(liType(transaction));
+                });
+
+                if (localHttpTransactions.length > 0) {
+                    transactionHeader(localHttpTransactions.length);
+                    $('#transaction-list').scrollTop(listUl[0].scrollHeight);
+                    let lastTransaction = localHttpTransactions[localHttpTransactions.length - 1];
+                    $('#transactions li:last-child .http-transaction-counter').html(lastTransaction.counter);
+                }
+                toggleAddTransaction();
+            }
+        });
     }
 
     chrome.runtime.onMessage.addListener(function (request) {
@@ -162,6 +247,6 @@ $(document).ready(function () {
 
     addMacClass();
 
-    renderTransactions(transactions.httpTransactions);
+    renderTransactions();
 });
 
