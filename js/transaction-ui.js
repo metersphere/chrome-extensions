@@ -82,7 +82,7 @@ $(document).ready(async function () {
         }
     });
 
-    nameInput.attr('placeholder', '2 测试用例 / 标签');
+    // 不再硬编码placeholder，将由toggleAddTransaction动态设置
 
     nameInput.keypress(function (event) {
         if (event.which === '13') {
@@ -181,9 +181,6 @@ $(document).ready(async function () {
                     let httpLength = transactions.httpTransactions.length;
                     transactionHeader(httpLength);
 
-                    const stepsCount = httpLength + 1;
-                    nameInput.attr('placeholder', `${stepsCount} 测试用例 / 标签`);
-
                     listUl.append(liType(response.transaction));
 
                     addBtn.addClass('disabled').attr('disabled', 'disabled');
@@ -195,19 +192,60 @@ $(document).ready(async function () {
     }
 
     function toggleAddTransaction() {
-        let lastTransaction = transactions.httpTransactions.length > 0 ?
-            transactions.httpTransactions[transactions.httpTransactions.length - 1] :
-            { counter: 0 };
-        let disable = lastTransaction.counter === 0;
-        if (disable) {
-            nameInput.val('').attr('disabled', true);
-            addBtn.addClass('disabled').attr('disabled', true);
-        } else {
-            nameInput.removeAttr('disabled');
-            if (!stringIsEmpty(nameInput.val())) {
-                addBtn.removeClass('disabled').removeAttr('disabled');
+        console.log('toggleAddTransaction called');
+        // 首先检查录制状态
+        chrome.runtime.sendMessage({ action: 'check_status' }, (response) => {
+            console.log('Recording status response:', response);
+            if (response && response.status) {
+                let isRecording = response.status === 'recording';
+                console.log('Is recording:', isRecording);
+
+                if (!isRecording) {
+                    // 如果没有在录制，禁用输入并提示用户
+                    console.log('Not recording, disabling input');
+                    nameInput.val('').attr('disabled', true);
+                    nameInput.attr('placeholder', '请先开始录制...');
+                    addBtn.addClass('disabled').attr('disabled', true);
+                    return;
+                }
+
+                // 如果在录制状态，检查是否有transactions以及最后一个transaction是否有计数
+                console.log('Transactions count:', transactions.httpTransactions.length);
+                if (transactions.httpTransactions.length === 0) {
+                    // 没有transactions，可以添加第一个
+                    console.log('No transactions, enabling input for first transaction');
+                    nameInput.removeAttr('disabled');
+                    nameInput.attr('placeholder', '1 测试用例 / 标签');
+                    if (!stringIsEmpty(nameInput.val())) {
+                        addBtn.removeClass('disabled').removeAttr('disabled');
+                    }
+                } else {
+                    // 有transactions，检查最后一个的计数
+                    let lastTransaction = transactions.httpTransactions[transactions.httpTransactions.length - 1];
+                    let disable = lastTransaction.counter === 0;
+                    console.log('Last transaction counter:', lastTransaction.counter, 'Disable:', disable);
+
+                    if (disable) {
+                        nameInput.val('').attr('disabled', true);
+                        nameInput.attr('placeholder', '请先完成当前测试用例的操作...');
+                        addBtn.addClass('disabled').attr('disabled', true);
+                    } else {
+                        nameInput.removeAttr('disabled');
+                        let nextNumber = transactions.httpTransactions.length + 1;
+                        nameInput.attr('placeholder', `${nextNumber} 测试用例 / 标签`);
+                        if (!stringIsEmpty(nameInput.val())) {
+                            addBtn.removeClass('disabled').removeAttr('disabled');
+                        }
+                    }
+                }
+            } else {
+                // 如果无法获取状态，默认禁用
+                console.log('Cannot get recording status, disabling input');
+                nameInput.val('').attr('disabled', true);
+                nameInput.attr('placeholder', '无法连接到后台服务...');
+                addBtn.addClass('disabled').attr('disabled', true);
             }
-        }
+        });
     }
 
     function stringIsEmpty(string) {
@@ -241,6 +279,10 @@ $(document).ready(async function () {
         switch (request.action) {
             case "update_transactions":
                 renderTransactions();
+                break;
+            case "recording_status_changed":
+                // 录制状态改变时，更新UI
+                toggleAddTransaction();
                 break;
         }
     });

@@ -69,6 +69,8 @@ class Recorder {
 
     changeStatus(status) {
         this.status = status;
+        // 通知所有transaction-ui页面录制状态改变
+        chrome.runtime.sendMessage({ action: 'recording_status_changed', status: status });
     }
 
     convertTraffic(sourceTraffic) {
