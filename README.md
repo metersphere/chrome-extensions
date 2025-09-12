@@ -45,7 +45,7 @@
 
 ## License & Copyright
 
-Copyright (c) 2014-2023 飞致云 FIT2CLOUD, All rights reserved.
+Copyright (c) 2014-2025 飞致云 FIT2CLOUD, All rights reserved.
 
 Licensed under The GNU General Public License version 3 (GPLv3)  (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
 
